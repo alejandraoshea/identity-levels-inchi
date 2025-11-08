@@ -1,0 +1,10 @@
+name: id-levels
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12.11
+  - pip
+  - pip:
+    - pandas
+    - pyopenms>=3.4.0
