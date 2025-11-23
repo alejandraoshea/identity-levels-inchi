@@ -7,13 +7,15 @@ class TestInChI(unittest.TestCase):
         self.assertEqual(InChiParser.getMainLayer("InChI=1S/C2H6O/i1+1/h1H2"), "C2H6O")
         self.assertEqual(InChiParser.getMainLayer("InChI=1/C3H6O/c1-3(2)4/h1-2H3/f/h1H"), "C3H6O")
 
-    def test_getAtomConnectionsLayerSublayer(self):
-        self.assertEqual(InChiParser.getAtomConnectionsLayerSublayer("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H"), "c1-2-4-6-5-3-1")
-        self.assertTrue(InChiParser.getAtomConnectionsLayerSublayer("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1/rC2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1").startswith("c"))
+    def test_getAtomConnectionsSublayer(self):
+        self.assertEqual(InChiParser.getAtomConnectionsSublayer("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H"), "c1-2-4-6-5-3-1")
+        self.assertTrue(InChiParser.getAtomConnectionsSublayer("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1/rC2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1").startswith("c"))
+        self.assertEqual(InChiParser.getAtomConnectionsSublayer("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1/rC2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1"), "c1-2-3;")
 
     def test_getHydrogenAtomsSublayer(self):
         self.assertEqual(InChiParser.getHydrogenAtomsSublayer("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H"), "h1-6H")
         self.assertEqual(InChiParser.getHydrogenAtomsSublayer("InChI=1S/C2H6O/i1+1/h1H2"), "h1H2")
+        self.assertEqual(InChiParser.getHydrogenAtomsSublayer("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1/rC2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1"), "h3H,2H2,1H3;")
 
     def test_getChargeSublayer(self):
         self.assertEqual(InChiParser.getChargeSublayer("InChI=1S/H3O+/h1H2/q+1"), "q+1")

@@ -8,7 +8,7 @@ class InChiParser:
                 return layer
         return None
 
-    def getAtomConnectionsLayerSublayer(inchi: str):
+    def getAtomConnectionsSublayer(inchi: str):
         parts = inchi.split("/")
         for sublayer in parts:
             if sublayer.startswith("c"):
@@ -38,6 +38,7 @@ class InChiParser:
         return None
 
 
+    #stereochemical layer: double bonds and cumulenes(sublayer)
     def getDoubleBondsSublayer(inchi: str):
         parts = inchi.split("/")
         for p in parts:
@@ -121,3 +122,13 @@ class InChiParser:
             if p.startswith("r"):
                 return p
         return None
+
+    def removeChargeLayersUsingParser(inchi: str) -> str:
+        parts = inchi.split("/")
+        filtered_parts = []
+        for p in parts:
+            if p.startswith("q") or p.startswith("p"):
+                # omitir capas de carga/protones para comparar inchis 
+                continue
+            filtered_parts.append(p)
+        return "/".join(filtered_parts)

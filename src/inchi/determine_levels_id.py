@@ -1,8 +1,58 @@
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem.SaltRemover import SaltRemover
+from inchi.inchi_parser import InChiParser
+from inchi.inchi_layers_enum import InchiLayers
 
 class InChi:
+    def isCompleteIdentity(inchi1: str, inchi2: str) -> bool:
+        return (
+            InChi.main_layer(inchi1, inchi2) and
+            InChi.charge_layer(inchi1, inchi2) and
+            InChi.stereochemical_layer(inchi1, inchi2) and
+            InChi.isotopic_layer(inchi1, inchi2) and
+            InChi.fixed_H_layer(inchi1, inchi2) and
+            InChi.reconnected_layer(inchi1, inchi2)
+        )
+
+    #main layer (sublayers: atom connections and hydrogen atoms)
+    def main_layer(inchi1: str, inchi2: str) -> bool:
+        return(InChiParser.getMainLayer(inchi1) == InChiParser.getMainLayer(inchi2) and
+            InChiParser.getAtomConnectionsSublayer(inchi1) == InChiParser.getAtomConnectionsSublayer(inchi2) and
+            InChiParser.getHydrogenAtomsSublayer(inchi1) == InChiParser.getHydrogenAtomsSublayer(inchi2)
+        )
+    
+    #charge layer (sublayers: charge and proton)
+    def charge_layer(inchi1: str, inchi2: str) -> bool:
+        return (
+            InChiParser.getChargeSublayer(inchi1) == InChiParser.getChargeSublayer(inchi2) and
+            InChiParser.getProtonSublayer(inchi1) == InChiParser.getProtonSublayer(inchi2)
+        )
+    
+    #stereochemical layer (sublayers: double bonds, tetrahedrals, type)
+    def stereochemical_layer(inchi1: str, inchi2: str) -> bool:
+        return (
+            InChiParser.getDoubleBondsSublayer(inchi1) == InChiParser.getDoubleBondsSublayer(inchi2) and
+            InChiParser.getTetrahedralStereoSublayer(inchi1) == InChiParser.getTetrahedralStereoSublayer(inchi2) and
+            InChiParser.getTypeStereoInfoSublayer(inchi1) == InChiParser.getTypeStereoInfoSublayer(inchi2)
+        )
+    
+    def isotopic_layer(inchi1: str, inchi2: str) -> bool:
+        return (
+            InChiParser.getIsotopicLayer(inchi1) == InChiParser.getIsotopicLayer(inchi2) and
+            InChiParser.getIsotopicHydrogenSublayer(inchi1) == InChiParser.getIsotopicHydrogenSublayer(inchi2) and
+            InChiParser.getIsotopicStereoSublayer(inchi1) == InChiParser.getIsotopicStereoSublayer(inchi2)
+        )
+    #Isotopic layer (prefix: "i"), may include sublayers:[13]
+
+    def fixed_H_layer(inchi1: str, inchi2: str) -> bool:
+        return InChiParser.getFixedHLayer(inchi1) == InChiParser.getFixedHLayer(inchi2)
+
+    def reconnected_layer(inchi1: str, inchi2: str) -> bool:
+        return InChiParser.getReconnectedLayer(inchi1) == InChiParser.getReconnectedLayer(inchi2)
+    # never included in standard InChI
+
+
     def mol_from_inchi(inchi: str):
         try:
             mol = Chem.MolFromInchi(inchi)
@@ -11,96 +61,29 @@ class InChi:
             return mol
         except Exception:
             return None
-
-    def _split(inchi: str):
-        #split InChI into '/' components
-        return inchi.split('/')
-
-    def isCompleteIdentity(inchi1: str, inchi2: str) -> bool:
-        mol1 = InChi.mol_from_inchi(inchi1)
-        mol2 = InChi.mol_from_inchi(inchi2)
-        if not mol1 or not mol2:
-            return False
-        return Chem.MolToInchi(mol1) == Chem.MolToInchi(mol2)
-
-    def main_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if (not p[0].isalpha() and not p.startswith("InChI=")) or p.startswith(('c', 'h'))]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-
-    #Atom connections (prefix: "c"). The atoms in the chemical formula (except for hydrogens) are numbered in sequence; this sublayer describes which atoms are connected by bonds to which other ones. The type of those bonds is later specified in the stereochemical layer prefixed by "b".
-    def charge_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if p.startswith(('q', 'p'))]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-    #charge sublayer (prefix: "q")
-    #proton sublayer (prefix: "p" for "protons")
-
     
-    #Hydrogen atoms (prefix: "h")
-    def stereochemical_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if p.startswith(('b', 't', 'm', 's'))]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-    #double bonds and cumulenes (prefix: "b")
-    #tetrahedral stereochemistry of atoms and allenes (prefixes: "t", "m")
-    #type of stereochemistry information (prefix: "s")
-
-    def isotopic_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if p.startswith('i')]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-    #Isotopic layer (prefix: "i"), may include sublayers:[13]
-    #sublayer "h" for isotopic hydrogen
-    #sublayers "b", "t", "m", "s" for isotopic stereochemistry
-
-
-    def fixed_H_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if p.startswith('f')]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-    #Fixed-H layer (prefix: "f") for tautomeric hydrogens; contains some or all of the above types of layers except atom connections; 
-    # may end with "o" sublayer; never included in standard InChI[13]
-
-    def reconnected_layer(inchi1: str, inchi2: str) -> bool:
-        def extract(parts):
-            return [p for p in parts if p.startswith('r')]
-        p1 = extract(InChi._split(inchi1))
-        p2 = extract(InChi._split(inchi2))
-        return p1 == p2
-    #Reconnected layer (prefix: "r"); contains the whole InChI of a structure with reconnected metal atoms; 
-    # never included in standard InChI
-
     def main_fragment(mol):
         remover = SaltRemover()
         try:
-            mol_clean = remover.StripMol(mol, dontRemoveEverything=True) #strip the salt
-            return mol_clean #contains the desalted molecule
+            mol_clean = remover.StripMol(mol, dontRemoveEverything=True)
+            Chem.AssignStereochemistry(mol_clean, cleanIt=True, force=True)
+            return mol_clean
         except Exception:
-            return mol  
-
+            return mol
+    
     def areEqualDisolvedSalts(inchi1: str, inchi2: str) -> bool:
         mol1 = InChi.mol_from_inchi(inchi1)
         mol2 = InChi.mol_from_inchi(inchi2)
-        
         if not mol1 or not mol2:
-            return False
-        
+            return False    
         main1 = InChi.main_fragment(mol1)
-        main2 = InChi.main_fragment(mol2)
-        
+        main2 = InChi.main_fragment(mol2)      
         return Chem.MolToInchi(main1) == Chem.MolToInchi(main2)
 
+    def areEqualNoCharges(inchi1: str, inchi2:str) -> bool:
+        inchi1_no_charge = InChiParser.removeChargeLayersUsingParser(inchi1)
+        inchi2_no_charge = InChiParser.removeChargeLayersUsingParser(inchi2)
+        return inchi1_no_charge == inchi2_no_charge
 
     def areEqualNoPositionDoubleBond(inchi1: str, inchi2:str) -> bool:
         mol1 = InChi.mol_from_inchi(inchi1)
@@ -131,11 +114,48 @@ class InChi:
         
         return mcs.numAtoms == mol1.GetNumAtoms() == mol2.GetNumAtoms()
 
+    def get_ids(inchi1: str, inchi2: str) -> dict:
+            """
+            Returns: dict<InchiLayers, bool>
+            For every identity rule, returns whether it is satisfied by the pair.
+            """
+
+            results = {}
+
+            results[InchiLayers.COMPLETE_IDENTITY] = (
+                InChi.isCompleteIdentity(inchi1, inchi2)
+            )
+
+            results[InchiLayers.INDEPENDENT_SALTS] = (
+                InChi.equal_ignoring_salts(inchi1, inchi2)
+            )
+
+            results[InchiLayers.INDEPENDENT_CHARGES] = (
+                InChi.main_layer(inchi1, inchi2) and
+                not InChi.charge_layer(inchi1, inchi2)
+            )
+
+            results[InchiLayers.INDEPENDENT_DOUBLE_BONDS] = (
+                InChi.equal_ignoring_double_bond_position(inchi1, inchi2)
+            )
+
+            results[InchiLayers.TAUTOMERIC] = (
+                InChi.main_layer(inchi1, inchi2) and
+                InChiParser.getHydrogenAtomsSublayer(inchi1)
+                != InChiParser.getHydrogenAtomsSublayer(inchi2)
+            )
+
+            results[InchiLayers.STEREOCHEMICAL] = (
+                InChi.main_layer(inchi1, inchi2) and
+                not InChi.stereochemical_layer(inchi1, inchi2)
+            )
+
+            results[InchiLayers.ISOTOPIC] = (
+                InChi.equal_ignoring_isotopes(inchi1, inchi2)
+            )
+
+            return results
 
 
 #TODO:
 #MAP<IDS,BOOLEAN>GETIDS(INCHI1,INCHI2)
-#areEqualNoIsotopes(): RDKit puede sustituir
-#areEqualNoSustituyentes(): Smiles? ??
-#areEqualNoTautomeric(): ver Inchi Layers
-#areEqualNoPositionDoubleBond(inchi1,inchi2): formula igual que el resto????
