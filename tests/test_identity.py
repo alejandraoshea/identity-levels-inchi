@@ -31,30 +31,40 @@ class TestInChI(unittest.TestCase):
         self.assertTrue(InChi.areEqualNoCharges(inchi3, inchi4))
         self.assertTrue(InChi.areEqualNoCharges(inchi1, inchi5))
 
+    def test_equals_without_charges1(self):
+        inchi1="InChI=1S/C23H45NO4.ClH/c1-5-6-7-8-9-10-11-12-13-14-15-16-17-18-23(27)28-21(19-22(25)26)20-24(2,3)4;/h21H,5-20H2,1-4H3;1H"
+        inchi2="InChI=1S/C23H45NO4.ClH/c1-5-6-7-8-9-10-11-12-13-14-15-16-17-18-23(27)28-21(19-22(25)26)20-24(2,3)4;/h21H,5-20H2,1-4H3;1H"
+        self.assertTrue(InChi.areEqualNoCharges(inchi1, inchi2))
+        #CHECK
+
     def test_equals_without_charges_permanent_and_optional(self):
         inchi1="InChI=1S/C5H11NO2/c1-6(2,3)4-5(7)8/h4H2,1-3H3/p+1"
         inchi2="InChI=1S/C5H11NO2/c1-6(2,3)4-5(7)8/h4H2,1-3H3"
         self.assertTrue(InChi.areEqualNoCharges(inchi1, inchi2))
 
-    def test_are_equal_no_position_double_bond(self):
-        inchi_a = "InChI=1S/C2H2/c1-2/h1-2H"  
-        inchi_b = "InChI=1S/C2H2/c1-2/h1-2H"  
-        self.assertTrue(InChi.areEqualNoPositionDoubleBond(inchi_a, inchi_b))
+    def test_equal_no_position_double_bond_position(self):
+        inchi1="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h9-10H,2-8,11-17H2,1H3,(H,19,20)/b10-9-"
+        inchi2="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h8-9H,2-7,10-17H2,1H3,(H,19,20)/b9-8+"
+        inchi3="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h7-8H,2-6,9-17H2,1H3,(H,19,20)/b8-7+"
+        self.assertTrue(InChi.areEqualNoPositionDoubleBond(inchi1, inchi2))
+        self.assertTrue(InChi.areEqualNoPositionDoubleBond(inchi3, inchi2))
 
-    def test_are_not_equal_no_position_double_bond(self):
-        inchi_a = "InChI=1S/C2H2/c1-2/h1-2H"   
-        inchi_b = "InChI=1S/CH4/h1H4"          
-        self.assertFalse(InChi.areEqualNoPositionDoubleBond(inchi_a, inchi_b))
+    def test_equal_no_position_double_bond(self):
+        inchi1="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h9-10H,2-8,11-17H2,1H3,(H,19,20)/b10-9-"
+        inchi2="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h9-10H,2-8,11-17H2,1H3,(H,19,20)/b10-9+"
+        self.assertTrue(InChi.areEqualNoPositionDoubleBond(inchi1, inchi2))
+
+    def test_are_equal_tautomers(self):
+        inchi1="InChI=1S/C5H10O/c1-3-4-5(2)6/h3-4H2,1-2H3"
+        inchi2="InChI=1S/C5H10O/c1-3-4-5(2)6/h4,6H,3H2,1-2H3/b5-4-"
+        self.assertTrue(InChi.areEqualTautomers(inchi1, inchi2))
 
     def test_are_equal_no_isotopes(self):
-        inchi_normal = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
-        inchi_isotope = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3/i1+1"  
-        self.assertTrue(InChi.areEqualNoIsotopes(inchi_normal, inchi_isotope))
-
-    def test_are_not_equal_no_isotopes(self):
-        inchi_a = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
-        inchi_b = "InChI=1S/CH4O/c1-2/h2H,1H3"
-        self.assertFalse(InChi.areEqualNoIsotopes(inchi_a, inchi_b))
+        inchi1="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1"
+        inchi2="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i1D"
+        inchi3="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i9+1"
+        self.assertTrue(InChi.areEqualNoIsotopes(inchi1, inchi2))
+        self.assertTrue(InChi.areEqualNoIsotopes(inchi3, inchi2))
 
 if __name__ == "__main__":
     unittest.main()

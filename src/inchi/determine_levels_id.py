@@ -59,7 +59,8 @@ class InChi:
             if mol is None:
                 raise ValueError(f"Invalid InChI: {inchi}")
             return mol
-        except Exception:
+        except Exception as e:
+            print(f"RDKit conversion failed for InChI: {inchi}\nError: {e}")
             return None
     
     def main_fragment(mol):
@@ -85,77 +86,54 @@ class InChi:
         inchi2_no_charge = InChiParser.removeChargeLayersUsingParser(inchi2)
         return inchi1_no_charge == inchi2_no_charge
 
+    def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
+        inchi1_no_stereo = InChiParser.removeStereoLayersUsingParser(inchi1)
+        inchi2_no_stereo = InChiParser.removeStereoLayersUsingParser(inchi2)
+        return inchi1_no_stereo == inchi2_no_stereo
+
+    #stereochemical layer - sublayer
     def areEqualNoPositionDoubleBond(inchi1: str, inchi2:str) -> bool:
-        mol1 = InChi.mol_from_inchi(inchi1)
-        mol2 = InChi.mol_from_inchi(inchi2)
-        if not mol1 or not mol2:
-            return False
-
-        mcs = rdFMCS.FindMCS(
-            [mol1, mol2],
-            atomCompare=rdFMCS.AtomCompare.CompareElements,
-            bondCompare=rdFMCS.BondCompare.CompareOrder
-        )
-        return mcs.numAtoms == mol1.GetNumAtoms() == mol2.GetNumAtoms()
-
+        inchi1_no_double_bonds = InChiParser.removeDoubleBondsSublayer(inchi1)
+        inchi2_no_double_bonds = InChiParser.removeDoubleBondsSublayer(inchi2)
+        return inchi1_no_double_bonds == inchi2_no_double_bonds
 
     def areEqualNoIsotopes(inchi1: str, inchi2: str) -> bool:
-        mol1 = InChi.mol_from_inchi(inchi1)
-        mol2 = InChi.mol_from_inchi(inchi2)
-        
-        if not mol1 or not mol2:
+        inchi1_isotopes = InChiParser.removeIsotopicLayersUsingParser(inchi1)
+        inchi2_isotopes = InChiParser.removeIsotopicLayersUsingParser(inchi2)
+        return inchi1_isotopes == inchi2_isotopes
+    
+    def areEqualTautomers(inchi1: str, inchi2: str) -> bool:
+        sig1 = InChiParser.getTautomerLayer(inchi1)
+        sig2 = InChiParser.getTautomerLayer(inchi2)
+        if sig1 is None or sig2 is None:
             return False
-        
-        mcs = rdFMCS.FindMCS(
-            [mol1, mol2],
-            atomCompare=rdFMCS.AtomCompare.CompareElements,  
-            bondCompare=rdFMCS.BondCompare.CompareOrderExact
-        )
-        
-        return mcs.numAtoms == mol1.GetNumAtoms() == mol2.GetNumAtoms()
+        return sig1 == sig2
+    
 
+    @staticmethod
     def get_ids(inchi1: str, inchi2: str) -> dict:
-            """
-            Returns: dict<InchiLayers, bool>
-            For every identity rule, returns whether it is satisfied by the pair.
-            """
-
+        #dict<InchiLayers, bool>: For every identity rule, returns whether true/false for each layer
             results = {}
-
             results[InchiLayers.COMPLETE_IDENTITY] = (
                 InChi.isCompleteIdentity(inchi1, inchi2)
             )
-
             results[InchiLayers.INDEPENDENT_SALTS] = (
-                InChi.equal_ignoring_salts(inchi1, inchi2)
+                InChi.areEqualDisolvedSalts(inchi1, inchi2)
             )
-
             results[InchiLayers.INDEPENDENT_CHARGES] = (
-                InChi.main_layer(inchi1, inchi2) and
-                not InChi.charge_layer(inchi1, inchi2)
+                InChi.areEqualNoCharges(inchi1, inchi2)
             )
-
             results[InchiLayers.INDEPENDENT_DOUBLE_BONDS] = (
-                InChi.equal_ignoring_double_bond_position(inchi1, inchi2)
+                InChi.areEqualNoPositionDoubleBond(inchi1, inchi2)
             )
-
             results[InchiLayers.TAUTOMERIC] = (
-                InChi.main_layer(inchi1, inchi2) and
-                InChiParser.getHydrogenAtomsSublayer(inchi1)
-                != InChiParser.getHydrogenAtomsSublayer(inchi2)
+                InChi.areEqualTautomers(inchi1, inchi2)
             )
-
             results[InchiLayers.STEREOCHEMICAL] = (
-                InChi.main_layer(inchi1, inchi2) and
-                not InChi.stereochemical_layer(inchi1, inchi2)
+                InChi.areEqualNoStereo(inchi1, inchi2)
             )
-
             results[InchiLayers.ISOTOPIC] = (
-                InChi.equal_ignoring_isotopes(inchi1, inchi2)
+                InChi.areEqualNoIsotopes(inchi1, inchi2)
             )
 
             return results
-
-
-#TODO:
-#MAP<IDS,BOOLEAN>GETIDS(INCHI1,INCHI2)

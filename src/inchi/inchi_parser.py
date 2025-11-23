@@ -37,8 +37,7 @@ class InChiParser:
                 return p
         return None
 
-
-    #stereochemical layer: double bonds and cumulenes(sublayer)
+    #stereochemical layer: double bonds and cumulenes (sublayer)
     def getDoubleBondsSublayer(inchi: str):
         parts = inchi.split("/")
         for p in parts:
@@ -132,3 +131,69 @@ class InChiParser:
                 continue
             filtered_parts.append(p)
         return "/".join(filtered_parts)
+    
+    def removeDoubleBondsSublayer(inchi: str) -> str:
+        parts = inchi.split("/")
+        filtered = [p for p in parts if not (p.startswith("b") or p.startswith("h"))]
+        return "/".join(filtered)
+    
+    def getTautomerLayer(inchi: str):
+        if inchi is None:
+            return None
+
+        main = InChiParser.getMainLayer(inchi)
+        conn = InChiParser.getAtomConnectionsSublayer(inchi)
+
+        if main is None or conn is None:
+            return None
+
+        # return a canonical tuple
+        return (main, conn)
+    
+    def removeStereoLayersUsingParser(inchi: str) -> str:
+        if inchi is None:
+            return None
+
+        db = InChiParser.getDoubleBondsSublayer(inchi)          # /b
+        tet = InChiParser.getTetrahedralStereoSublayer(inchi)    # /t or /m
+        typ = InChiParser.getTypeStereoInfoSublayer(inchi)       # /s
+
+        parts = inchi.split("/")
+        filtered_parts = []
+
+        for p in parts:
+            if p == db:
+                continue
+            if p == tet:
+                continue
+            if p == typ:
+                continue
+            filtered_parts.append(p)
+
+        return "/".join(filtered_parts)
+
+
+
+    def removeIsotopicLayersUsingParser(inchi: str) -> str:
+        if inchi is None:
+            return None
+
+        isotopic_layer = InChiParser.getIsotopicLayer(inchi)
+        isotopic_stereo = InChiParser.getIsotopicStereoSublayer(inchi)
+
+        parts = inchi.split("/")
+        filtered_parts = []
+
+        for p in parts:
+            # we skip isotopic layer and isotopic stereo sublayers
+            if p == isotopic_layer:
+                continue
+            if isotopic_stereo:
+                # isotopic_stereo might be joined with "/", split to individual parts to check
+                stereo_parts = isotopic_stereo.split("/")
+                if p in stereo_parts:
+                    continue
+            filtered_parts.append(p)
+
+        return "/".join(filtered_parts)
+    
