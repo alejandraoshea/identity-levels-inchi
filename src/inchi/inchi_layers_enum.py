@@ -10,8 +10,4 @@ class InchiLayers(Enum):
     STEREOCHEMICAL = "stereochemical" 
     STEREOCHEMICAL_CIS_TRANS = "stereochemical_cis_trans" 
     INDEPENDENT_DOUBLE_BONDS = "independent_double_bonds"
-    ISOTOPIC = "isotopic" #presencia heavy metals
-
-#TODO: tautomeric inchi.exe    
-#Definimos tautomeric 1 y 2 (definidos en inchi.exe: ver cómo funciona)
-#para carga: si es p+N quitamos, si es q+N lo dejamos! , si es p-N o q-N tenemos que neutralizar el inchi usando RDKit
+    ISOTOPIC = "isotopic" #presence heavy metals

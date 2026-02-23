@@ -17,7 +17,8 @@ class InChi:
 
     #main layer (sublayers: atom connections and hydrogen atoms)
     def main_layer(inchi1: str, inchi2: str) -> bool:
-        return(InChiParser.getMainLayer(inchi1) == InChiParser.getMainLayer(inchi2) and
+        return(
+            InChiParser.getMainLayer(inchi1) == InChiParser.getMainLayer(inchi2) and
             InChiParser.getAtomConnectionsSublayer(inchi1) == InChiParser.getAtomConnectionsSublayer(inchi2) and
             InChiParser.getHydrogenAtomsSublayer(inchi1) == InChiParser.getHydrogenAtomsSublayer(inchi2)
         )
@@ -31,11 +32,11 @@ class InChi:
     
     def compare_charge_effects(original_inchi, neutral_inchi):
         return {
-            "orig_no_charge": InChiParser.removeChargeLayersUsingParser(original_inchi),
-            "neutral_no_charge": InChiParser.removeChargeLayersUsingParser(neutral_inchi),
+            "orig_no_charge": InChiParser.removeChargeLayers(original_inchi),
+            "neutral_no_charge": InChiParser.removeChargeLayers(neutral_inchi),
             "charge_independent_equal":
-                InChiParser.removeChargeLayersUsingParser(original_inchi)
-                == InChiParser.removeChargeLayersUsingParser(neutral_inchi)
+                InChiParser.removeChargeLayers(original_inchi)
+                == InChiParser.removeChargeLayers(neutral_inchi)
         }
     
     #stereochemical layer (sublayers: double bonds, tetrahedrals, type)
@@ -90,14 +91,56 @@ class InChi:
         main2 = InChi.main_fragment(mol2)      
         return Chem.MolToInchi(main1) == Chem.MolToInchi(main2)
 
-    def areEqualNoCharges(inchi1: str, inchi2:str) -> bool:
-        inchi1_no_charge = InChiParser.removeChargeLayersUsingParser(inchi1)
-        inchi2_no_charge = InChiParser.removeChargeLayersUsingParser(inchi2)
+    """def areEqualNoCharges(inchi1: str, inchi2:str) -> bool:
+        inchi1_no_charge = InChiParser.removeChargeLayers(inchi1)
+        inchi2_no_charge = InChiParser.removeChargeLayers(inchi2)
         return inchi1_no_charge == inchi2_no_charge
+        """
+    
+    @staticmethod
+    def compare_after_neutralization(inchi1: str, inchi2: str) -> bool:
+        mol1 = InChi.mol_from_inchi(inchi1)
+        mol2 = InChi.mol_from_inchi(inchi2)
+
+        if mol1 is None or mol2 is None:
+            return False
+
+        neutral1 = InChiParser.neutralize_molecule(mol1)
+        neutral2 = InChiParser.neutralize_molecule(mol2)
+
+        # we compare connectivity-only signatures
+        sig1 = Chem.MolToSmiles(neutral1, canonical=True, isomericSmiles=False,)
+        sig2 = Chem.MolToSmiles(neutral2,canonical=True,isomericSmiles=False,)
+        
+        return sig1 == sig2
+
+    def areEqualNoCharges(inchi1: str, inchi2: str) -> bool:
+        if inchi1 is None or inchi2 is None:
+            return False
+
+        # remove salts
+        mol1 = InChi.mol_from_inchi(inchi1)
+        mol2 = InChi.mol_from_inchi(inchi2)
+
+        if mol1 and mol2:
+            mol1 = InChi.main_fragment(mol1)
+            mol2 = InChi.main_fragment(mol2)
+            inchi1 = Chem.MolToInchi(mol1)
+            inchi2 = Chem.MolToInchi(mol2)
+
+        # remove isotopes
+        inchi1 = InChiParser.removeIsotopicLayers(inchi1)
+        inchi2 = InChiParser.removeIsotopicLayers(inchi2)
+
+        # remove charge layer
+        inchi1 = InChiParser.removeChargeLayers(inchi1)
+        inchi2 = InChiParser.removeChargeLayers(inchi2)
+
+        return inchi1 == inchi2
 
     def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
-        inchi1_no_stereo = InChiParser.removeStereoLayersUsingParser(inchi1)
-        inchi2_no_stereo = InChiParser.removeStereoLayersUsingParser(inchi2)
+        inchi1_no_stereo = InChiParser.removeStereoLayers(inchi1)
+        inchi2_no_stereo = InChiParser.removeStereoLayers(inchi2)
         return inchi1_no_stereo == inchi2_no_stereo
 
     #stereochemical layer - sublayer
@@ -107,8 +150,8 @@ class InChi:
         return inchi1_no_double_bonds == inchi2_no_double_bonds
 
     def areEqualNoIsotopes(inchi1: str, inchi2: str) -> bool:
-        inchi1_isotopes = InChiParser.removeIsotopicLayersUsingParser(inchi1)
-        inchi2_isotopes = InChiParser.removeIsotopicLayersUsingParser(inchi2)
+        inchi1_isotopes = InChiParser.removeIsotopicLayers(inchi1)
+        inchi2_isotopes = InChiParser.removeIsotopicLayers(inchi2)
         return inchi1_isotopes == inchi2_isotopes
     
     def areEqualTautomers(inchi1: str, inchi2: str) -> bool:
@@ -117,7 +160,6 @@ class InChi:
         if sig1 is None or sig2 is None:
             return False
         return sig1 == sig2
-    
 
     @staticmethod
     def get_ids(inchi1: str, inchi2: str) -> dict:
