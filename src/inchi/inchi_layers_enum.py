@@ -8,6 +8,7 @@ class InchiLayers(Enum):
     TAUTOMERIC = "tautomeric"
     TAUTOMERIC_1 = "tautomeric_1"
     TAUTOMERIC_2 = "tautomeric_2"
+    UNKNOWN_TAUTOMERY = "unknown_tautomery"
     STEREOCHEMICAL = "stereochemical" 
     STEREOCHEMICAL_CIS_TRANS = "stereochemical_cis_trans" 
     INDEPENDENT_DOUBLE_BONDS = "independent_double_bonds"
