@@ -101,45 +101,38 @@ class InChi:
             if part.startswith("q-") or part.startswith("p-"):
                 return True
         return False
-
-    """
-    @staticmethod
-    def compare_after_neutralization(inchi1: str, inchi2: str) -> bool:
-        mol1 = InChi.mol_from_inchi(inchi1)
-        mol2 = InChi.mol_from_inchi(inchi2)
-
-        if mol1 is None or mol2 is None:
-            return False
-
-        neutral1 = InChiParser.neutralize_molecule(mol1)
-        neutral2 = InChiParser.neutralize_molecule(mol2)
-
-        # we compare connectivity-only signatures
-        sig1 = Chem.MolToSmiles(neutral1, canonical=True, isomericSmiles=False,)
-        sig2 = Chem.MolToSmiles(neutral2,canonical=True,isomericSmiles=False,)
-        
-        return sig1 == sig2
-        """
     
     def areEqualNoCharges(inchi1: str, inchi2: str) -> bool:
-        mol1 = InChi.mol_from_inchi(inchi1)
-        mol2 = InChi.mol_from_inchi(inchi2)
+        inchi1 = inchi1.strip()
+        inchi2 = inchi2.strip()
 
-        if mol1 is None or mol2 is None:
-            return False
+        p1_plus, p1_minus, q1_plus, q1_minus = InChi.get_charge_info(inchi1)
+        p2_plus, p2_minus, q2_plus, q2_minus = InChi.get_charge_info(inchi2)
 
-        # remove salts
-        mol1 = InChi.main_fragment(mol1)
-        mol2 = InChi.main_fragment(mol2)
+        # CASE 1: only p+ → remove p layer
+        if (p1_plus or p2_plus) and not (p1_minus or p2_minus or q1_minus or q2_minus):
+            inchi1 = InChi.remove_only_p_layer(inchi1)
+            inchi2 = InChi.remove_only_p_layer(inchi2)
+            return inchi1 == inchi2
 
-        # neutralize
-        mol1 = InChiParser.neutralize_molecule(mol1)
-        mol2 = InChiParser.neutralize_molecule(mol2)
+        # CASE 2: negative charges → neutralize
+        if p1_minus or p2_minus or q1_minus or q2_minus:
+            mol1 = InChi.mol_from_inchi(inchi1)
+            mol2 = InChi.mol_from_inchi(inchi2)
 
-        sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
-        sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
+            if mol1 is None or mol2 is None:
+                return False
 
-        return sig1 == sig2
+            mol1 = InChiParser.neutralize_molecule(mol1)
+            mol2 = InChiParser.neutralize_molecule(mol2)
+
+            sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
+            sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
+
+            return sig1 == sig2
+
+        # CASE 3: only q+ → leave as is
+        return inchi1 == inchi2
 
     def get_charge_info(inchi: str):
         has_p_plus = False
