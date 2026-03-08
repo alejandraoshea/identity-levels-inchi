@@ -109,13 +109,13 @@ class InChi:
         p1_plus, p1_minus, q1_plus, q1_minus = InChi.get_charge_info(inchi1)
         p2_plus, p2_minus, q2_plus, q2_minus = InChi.get_charge_info(inchi2)
 
-        # CASE 1: only p+ → remove p layer
+        # CASE 1: p+N → remove p layer
         if (p1_plus or p2_plus) and not (p1_minus or p2_minus or q1_minus or q2_minus):
             inchi1 = InChi.remove_only_p_layer(inchi1)
             inchi2 = InChi.remove_only_p_layer(inchi2)
             return inchi1 == inchi2
 
-        # CASE 2: negative charges → neutralize
+        # CASE 2: q-N or p-N → neutralize
         if p1_minus or p2_minus or q1_minus or q2_minus:
             mol1 = InChi.mol_from_inchi(inchi1)
             mol2 = InChi.mol_from_inchi(inchi2)
@@ -131,7 +131,7 @@ class InChi:
 
             return sig1 == sig2
 
-        # CASE 3: only q+ → leave as is
+        # CASE 3: q+N → leave as is
         return inchi1 == inchi2
 
     def get_charge_info(inchi: str):
