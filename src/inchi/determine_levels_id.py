@@ -4,6 +4,7 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from inchi.inchi_parser import InChiParser
 from inchi.inchi_layers_enum import InchiLayers
 from inchi.lipid_analysis import LipidAnalysis
+import subprocess
 
 class InChi:
     def isCompleteIdentity(inchi1: str, inchi2: str) -> bool:
@@ -212,12 +213,53 @@ class InChi:
         return LipidAnalysis.equal_ignore_double_bond_position(mol1, mol2)
     
 
-    def areEqualTautomers(inchi1: str, inchi2: str) -> bool:
-        sig1 = InChiParser.getTautomerLayer(inchi1)
-        sig2 = InChiParser.getTautomerLayer(inchi2)
-        if sig1 is None or sig2 is None:
+    def run_inchitrust(mol, inchitrust_path):
+        try:
+            molblock = Chem.MolToMolBlock(mol)
+
+            process = subprocess.run(
+                [inchitrust_path],
+                input=molblock,
+                text=True,
+                capture_output=True,
+                check=True
+            )
+
+            output = process.stdout.strip()
+
+            return output
+
+        except Exception as e:
+            print(f"InChI Trust execution failed: {e}")
+            return None
+        
+    def areEqualTautomers(inchi1: str, inchi2: str, inchitrust_path: str) -> bool:
+        # STEP 1: remove isotope layers
+        inchi1 = InChiParser.removeIsotopicLayers(inchi1)
+        inchi2 = InChiParser.removeIsotopicLayers(inchi2)
+
+        mol1 = InChi.mol_from_inchi(inchi1)
+        mol2 = InChi.mol_from_inchi(inchi2)
+
+        if mol1 is None or mol2 is None:
             return False
-        return sig1 == sig2
+
+        # STEP 2: remove salts
+        mol1 = InChi.main_fragment(mol1)
+        mol2 = InChi.main_fragment(mol2)
+
+        # STEP 3: neutralize charges
+        mol1 = InChiParser.neutralize_molecule(mol1)
+        mol2 = InChiParser.neutralize_molecule(mol2)
+
+        # STEP 4: generate canonical tautomer
+        taut1 = InChi.run_inchitrust(mol1, inchitrust_path)
+        taut2 = InChi.run_inchitrust(mol2, inchitrust_path)
+
+        if taut1 is None or taut2 is None:
+            return False
+
+        return taut1 == taut2
 
     @staticmethod
     def get_ids(inchi1: str, inchi2: str) -> dict:

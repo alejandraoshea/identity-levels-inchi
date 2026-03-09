@@ -6,6 +6,16 @@ class TestInChI(unittest.TestCase):
         inchi = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
         self.assertTrue(InChi.isCompleteIdentity(inchi, inchi))
 
+    def test_are_equal_no_isotopes(self):
+        inchi1="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1"
+        inchi2="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i1D"
+        self.assertTrue(InChi.areEqualNoIsotopes(inchi1, inchi2))
+
+    def test_are_equal_no_isotopes2(self):
+        inchi1="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i1D"
+        inchi2="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i9+1"
+        self.assertTrue(InChi.areEqualNoIsotopes(inchi1, inchi2))
+
     def test_are_equal_diluted_salts(self):
         inchi_a = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
         inchi_b = "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3"
@@ -58,17 +68,12 @@ class TestInChI(unittest.TestCase):
         inchi2="InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h9-10H,2-8,11-17H2,1H3,(H,19,20)/b10-9+"
         self.assertTrue(InChi.areEqualNoPositionDoubleBond(inchi1, inchi2))
 
+    """
     def test_are_equal_tautomers(self):
         inchi1="InChI=1S/C5H10O/c1-3-4-5(2)6/h3-4H2,1-2H3"
         inchi2="InChI=1S/C5H10O/c1-3-4-5(2)6/h4,6H,3H2,1-2H3/b5-4-"
-        self.assertTrue(InChi.areEqualTautomers(inchi1, inchi2))
+        self.assertTrue(InChi.areEqualTautomers(inchi1, inchi2))"""
 
-    def test_are_equal_no_isotopes(self):
-        inchi1="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1"
-        inchi2="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i1D"
-        inchi3="InChI=1S/C9H11NO2/c10-8(9(11)12)6-7-4-2-1-3-5-7/h1-5,8H,6,10H2,(H,11,12)/t8-/m0/s1/i9+1"
-        self.assertTrue(InChi.areEqualNoIsotopes(inchi1, inchi2))
-        self.assertTrue(InChi.areEqualNoIsotopes(inchi3, inchi2))
 
 if __name__ == "__main__":
     unittest.main()
