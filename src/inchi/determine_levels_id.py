@@ -184,10 +184,10 @@ class InChi:
                 parts.append(p.strip())
         return "/".join(parts)
 
-    """def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
+    def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
         inchi1_no_stereo = InChiParser.removeStereoLayers(inchi1)
         inchi2_no_stereo = InChiParser.removeStereoLayers(inchi2)
-        return inchi1_no_stereo == inchi2_no_stereo"""
+        return inchi1_no_stereo == inchi2_no_stereo
 
     #stereochemical layer - sublayer
     def areEqualNoPositionDoubleBond(inchi1: str, inchi2: str) -> bool:
@@ -261,6 +261,7 @@ class InChi:
 
         return taut1 == taut2
 
+    """
     @staticmethod
     def get_ids(inchi1: str, inchi2: str) -> dict:
         #dict<InchiLayers, bool>: for every identity rule, returns whether true/false for each layer
@@ -286,4 +287,64 @@ class InChi:
             results[InchiLayers.ISOTOPIC] = (
                 InChi.areEqualNoIsotopes(inchi1, inchi2)
             )
-            return results
+            return results"""
+
+    @staticmethod
+    def get_ids(inchi1: str, inchi2: str, config: dict) -> dict:
+
+        criteria = config["identity_criteria"]
+
+        results = {}
+
+        # COMPLETE IDENTITY
+        if criteria["complete_identity"]["enabled"]:
+            results[InchiLayers.COMPLETE_IDENTITY] = (
+                InChi.isCompleteIdentity(inchi1, inchi2)
+            )
+
+        # ISOTOPES
+        if criteria["isotope_independence"]["isotope_independent_identity"]:
+            results[InchiLayers.ISOTOPIC] = (
+                InChi.areEqualNoIsotopes(inchi1, inchi2)
+            )
+
+        # SALTS
+        if criteria["salt_independence"]["desalted_identity"]:
+            results[InchiLayers.INDEPENDENT_SALTS] = (
+                InChi.areEqualDisolvedSalts(inchi1, inchi2)
+            )
+
+        # CHARGES
+        if criteria["charge_independence"]["charge_independent_identity"]:
+            results[InchiLayers.INDEPENDENT_CHARGES] = (
+                InChi.areEqualNoCharges(inchi1, inchi2)
+            )
+
+        # DOUBLE BOND POSITION
+        if criteria["isomer_independence"]["double_bond_position_independent_identity"]:
+            results[InchiLayers.INDEPENDENT_DOUBLE_BONDS] = (
+                InChi.areEqualNoPositionDoubleBond(inchi1, inchi2)
+            )
+
+        # CIS/TRANS
+        if criteria["isomer_independence"]["cis_trans_independent_identity"]:
+            results[InchiLayers.STEREOCHEMICAL_CIS_TRANS] = (
+                InChi.areEqualNoStereo(inchi1, inchi2)
+            )
+
+        # TAUTOMERS
+        tautomer_cfg = criteria["tautomer_independence"]
+
+        if tautomer_cfg["tautomer_independent_identity"]:
+
+            inchitrust_path = tautomer_cfg["inchitrust_path"]
+
+            results[InchiLayers.TAUTOMERIC] = (
+                InChi.areEqualTautomers(
+                    inchi1,
+                    inchi2,
+                    inchitrust_path
+                )
+            )
+
+        return results
