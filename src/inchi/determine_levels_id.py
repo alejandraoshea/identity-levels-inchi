@@ -5,6 +5,8 @@ from inchi.inchi_parser import InChiParser
 from inchi.inchi_layers_enum import InchiLayers
 from inchi.lipid_analysis import LipidAnalysis
 import subprocess
+from rdkit.Chem.Scaffolds import MurckoScaffold
+from collections import Counter
 
 class InChi:
     def isCompleteIdentity(inchi1: str, inchi2: str) -> bool:
@@ -87,7 +89,6 @@ class InChi:
         inchi2_isotopes = InChiParser.removeIsotopicLayers(inchi2)
         return inchi1_isotopes == inchi2_isotopes
     
-    #TODO: ADD HIERARCHY
     def areEqualDisolvedSalts(inchi1: str, inchi2: str) -> bool:
         mol1 = InChi.mol_from_inchi(inchi1)
         mol2 = InChi.mol_from_inchi(inchi2)
@@ -212,7 +213,6 @@ class InChi:
         # STEP 5: double bond comparison
         return LipidAnalysis.equal_ignore_double_bond_position(mol1, mol2)
     
-
     def run_inchitrust(mol, inchitrust_path):
         try:
             molblock = Chem.MolToMolBlock(mol)
@@ -261,6 +261,77 @@ class InChi:
 
         return taut1 == taut2
 
+    def get_scaffold(mol):
+        return MurckoScaffold.GetScaffoldForMol(mol)
+
+    def get_substituent_signatures(mol, scaffold):
+        scaffold_atoms = {a.GetIdx() for a in scaffold.GetAtoms()}
+
+        atoms_to_remove = [
+            atom.GetIdx()
+            for atom in mol.GetAtoms()
+            if atom.GetIdx() in scaffold_atoms
+        ]
+
+        emol = Chem.EditableMol(mol)
+
+        for idx in sorted(atoms_to_remove, reverse=True):
+            emol.RemoveAtom(idx)
+
+        subs_mol = emol.GetMol()
+
+        frags = Chem.GetMolFrags(
+            subs_mol,
+            asMols=True,
+            sanitizeFrags=True
+        )
+
+        subs = []
+
+        for frag in frags:
+            smiles = Chem.MolToSmiles(
+                frag,
+                canonical=True,
+                isomericSmiles=False
+            )
+            subs.append(smiles)
+
+        return Counter(subs)
+
+
+    #TODO: complete hierarchy
+    def substituent_position_independent_signature(inchi):
+        mol = InChi.mol_from_inchi(inchi)
+
+        if mol is None:
+            return None
+
+        # STEP 1: remove salts
+        mol = InChi.main_fragment(mol)
+
+        # STEP 2: neutralize
+        mol = InChiParser.neutralize_molecule(mol)
+
+        scaffold = InChi.get_scaffold(mol)
+        scaffold_smiles = Chem.MolToSmiles(
+            scaffold,
+            canonical=True,
+            isomericSmiles=False
+        )
+
+        subs = InChi.get_substituent_signatures(mol, scaffold)
+
+        return (scaffold_smiles, subs)
+
+    def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
+        sig1 = InChi.substituent_position_independent_signature(inchi1)
+        sig2 = InChi.substituent_position_independent_signature(inchi2)
+
+        if sig1 is None or sig2 is None:
+            return False
+
+        return sig1 == sig2
+
     """
     @staticmethod
     def get_ids(inchi1: str, inchi2: str) -> dict:
@@ -291,7 +362,6 @@ class InChi:
 
     @staticmethod
     def get_ids(inchi1: str, inchi2: str, config: dict) -> dict:
-
         criteria = config["identity_criteria"]
 
         results = {}
@@ -345,6 +415,12 @@ class InChi:
                     inchi2,
                     inchitrust_path
                 )
+            )
+
+        # SUBSTITUENT POSITION INDEPENDENCE
+        if tautomer_cfg["substituent_position_independent_identity"]:
+            results[InchiLayers.SUBSTITUENT_POSITION_INDEPENDENT] = (
+                InChi.areEqualSubstituentIndependent(inchi1, inchi2)
             )
 
         return results

@@ -12,3 +12,4 @@ class InchiLayers(Enum):
     STEREOCHEMICAL = "stereochemical" 
     STEREOCHEMICAL_CIS_TRANS = "stereochemical_cis_trans" 
     INDEPENDENT_DOUBLE_BONDS = "independent_double_bonds"
+    SUBSTITUENT_POSITION_INDEPENDENT = "substituent_position_independent"
