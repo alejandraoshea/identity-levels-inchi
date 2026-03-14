@@ -28,7 +28,7 @@ def main():
     compare_parser.add_argument(
         "--output_file",
         help="Output results JSON",
-        default="configs/results.json"
+        default="output/results.json"
     )
 
     args = parser.parse_args()
