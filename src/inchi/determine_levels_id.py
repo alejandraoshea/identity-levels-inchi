@@ -266,62 +266,72 @@ class InChi:
 
     def get_substituent_signatures(mol, scaffold):
         scaffold_atoms = {a.GetIdx() for a in scaffold.GetAtoms()}
+        visited = set()
+        substituents = []
 
-        atoms_to_remove = [
-            atom.GetIdx()
-            for atom in mol.GetAtoms()
-            if atom.GetIdx() in scaffold_atoms
-        ]
+        for atom in mol.GetAtoms():
+            idx = atom.GetIdx()
 
-        emol = Chem.EditableMol(mol)
+            if idx in scaffold_atoms or idx in visited:
+                continue
 
-        for idx in sorted(atoms_to_remove, reverse=True):
-            emol.RemoveAtom(idx)
+            stack = [idx]
+            frag_atoms = set()
 
-        subs_mol = emol.GetMol()
+            while stack:
+                current = stack.pop()
 
-        frags = Chem.GetMolFrags(
-            subs_mol,
-            asMols=True,
-            sanitizeFrags=True
-        )
+                if current in visited:
+                    continue
 
-        subs = []
+                visited.add(current)
+                frag_atoms.add(current)
 
-        for frag in frags:
-            smiles = Chem.MolToSmiles(
-                frag,
+                atom_obj = mol.GetAtomWithIdx(current)
+
+                for nbr in atom_obj.GetNeighbors():
+                    nbr_idx = nbr.GetIdx()
+
+                    if nbr_idx not in scaffold_atoms and nbr_idx not in visited:
+                        stack.append(nbr_idx)
+
+            smiles = Chem.MolFragmentToSmiles(
+                mol,
+                atomsToUse=list(frag_atoms),
                 canonical=True,
                 isomericSmiles=False
             )
-            subs.append(smiles)
 
-        return Counter(subs)
+            substituents.append(smiles)
 
+        return Counter(substituents)
 
-    #TODO: complete hierarchy
     def substituent_position_independent_signature(inchi):
         mol = InChi.mol_from_inchi(inchi)
 
         if mol is None:
             return None
 
-        # STEP 1: remove salts
+        # STEP 1 — remove salts
         mol = InChi.main_fragment(mol)
 
-        # STEP 2: neutralize
+        # STEP 2 — neutralize
         mol = InChiParser.neutralize_molecule(mol)
 
+        # STEP 3 — Murcko scaffold
         scaffold = InChi.get_scaffold(mol)
+
         scaffold_smiles = Chem.MolToSmiles(
             scaffold,
             canonical=True,
             isomericSmiles=False
         )
 
+        # STEP 4 — substituent multiset
         subs = InChi.get_substituent_signatures(mol, scaffold)
 
         return (scaffold_smiles, subs)
+
 
     def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
         sig1 = InChi.substituent_position_independent_signature(inchi1)
@@ -331,6 +341,7 @@ class InChi:
             return False
 
         return sig1 == sig2
+
 
     """
     @staticmethod
@@ -406,19 +417,13 @@ class InChi:
         tautomer_cfg = criteria["tautomer_independence"]
 
         if tautomer_cfg["tautomer_independent_identity"]:
-
             inchitrust_path = tautomer_cfg["inchitrust_path"]
-
             results[InchiLayers.TAUTOMERIC] = (
-                InChi.areEqualTautomers(
-                    inchi1,
-                    inchi2,
-                    inchitrust_path
-                )
+                InChi.areEqualTautomers(inchi1, inchi2, inchitrust_path)
             )
-
+        
         # SUBSTITUENT POSITION INDEPENDENCE
-        if tautomer_cfg["substituent_position_independent_identity"]:
+        if criteria["substituent_position_independence"]["substituent_position_independent_identity"]:
             results[InchiLayers.SUBSTITUENT_POSITION_INDEPENDENT] = (
                 InChi.areEqualSubstituentIndependent(inchi1, inchi2)
             )
