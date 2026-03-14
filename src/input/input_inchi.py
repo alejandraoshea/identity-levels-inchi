@@ -10,9 +10,8 @@ class InputInChI:
 
         result = get_ids_function(inchi1, inchi2, config)
 
-        print("===== RESULT =====")
+        print("RESULT:")
         for layer, value in result.items():
             print(f"{layer.name}: {value}")
-        print("==================\n")
 
         return result
