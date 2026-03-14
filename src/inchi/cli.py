@@ -5,7 +5,7 @@ def main():
 
     parser = argparse.ArgumentParser(
         prog="inchi",
-        description="InChi identity comparison tool"
+        description="Inchi identity comparison tool"
     )
 
     subparsers = parser.add_subparsers(dest="command")
@@ -28,7 +28,7 @@ def main():
     compare_parser.add_argument(
         "--output_file",
         help="Output results JSON",
-        default="results.json"
+        default="configs/results.json"
     )
 
     args = parser.parse_args()
