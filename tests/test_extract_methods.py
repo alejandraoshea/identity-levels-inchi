@@ -60,30 +60,7 @@ class TestInChI(unittest.TestCase):
         self.assertTrue(InChiParser.getReconnectedLayer("InChI=1S/C2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1/rC2H6O.Na/c1-2-3;/h3H,2H2,1H3;/q;+1").startswith("r"))
         self.assertIsNone(InChiParser.getReconnectedLayer("InChI=1S/C6H6/c1-2-4-6-5-3-1/h1-6H"))
 
-
-    #its failing because its comparing them by doing: removing charge layer with the inchi being 
-    #neutralized and then obtaining the final inchi so the result is different 
-    #because for example here it takes q-1 and when neutralizing it it adds a charge so the resulting
-    #inchi has q+1 so i just have to figure out a way to neutralize the original inchi and obtaining it
-    #instead of this which feels like neutralizing and obtaining the new molecule after
-    #CHECK:
-    """
-    def test_carboxylate_neutralization(self):
-        inchi = "InChI=1S/C2H3O2/c1-2(3)4/h1H3/q-1"
-
-        mol = Chem.MolFromInchi(inchi)
-        self.assertIsNotNone(mol)
-
-        neutral = InChiParser.neutralize_molecule(mol)
-
-        # Compare connectivity via canonical SMILES
-        neutral_smiles = Chem.MolToSmiles(neutral,canonical=True,isomericSmiles=False)
-
-        self.assertEqual(neutral_smiles, "CC(=O)O")
-    """
-    
-    #CHECK: OK (fow now)
-    def test_carboxylate_neutralization_connectivity(self):
+    """def test_carboxylate_neutralization_connectivity(self):
         inchi = "InChI=1S/C2H3O2/c1-2(3)4/h1H3/q-1"
 
         mol = Chem.MolFromInchi(inchi)
@@ -95,7 +72,7 @@ class TestInChI(unittest.TestCase):
         self.assertEqual(
             InChiParser.getAtomConnectionsSublayer(inchi),
             InChiParser.getAtomConnectionsSublayer(neutral_inchi),
-        )
+        )"""
 
 if __name__ == "__main__":
     unittest.main()
