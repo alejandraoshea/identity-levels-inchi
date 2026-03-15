@@ -1,5 +1,6 @@
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
+from rdkit.Chem import rdmolops
 from rdkit.Chem.SaltRemover import SaltRemover
 from inchi.inchi_parser import InChiParser
 from inchi.inchi_layers_enum import InchiLayers
@@ -210,13 +211,16 @@ class InChi:
         mol1 = InChiParser.neutralize_molecule(mol1)
         mol2 = InChiParser.neutralize_molecule(mol2)
 
+        #STEP 4: remoce cis/trans
+        LipidAnalysis.remove_cis_trans(mol1)
+        LipidAnalysis.remove_cis_trans(mol2)
+
         # STEP 5: double bond comparison
         return LipidAnalysis.equal_ignore_double_bond_position(mol1, mol2)
     
     def run_inchitrust(mol, inchitrust_path):
         try:
             molblock = Chem.MolToMolBlock(mol)
-
             process = subprocess.run(
                 [inchitrust_path],
                 input=molblock,
@@ -226,7 +230,6 @@ class InChi:
             )
 
             output = process.stdout.strip()
-
             return output
 
         except Exception as e:
@@ -234,7 +237,7 @@ class InChi:
             return None
         
     def areEqualTautomers(inchi1: str, inchi2: str, inchitrust_path: str | None = None) -> bool:
-        # If path not provided, read from environment variable
+        # if path not provided, read from environment variable
         if inchitrust_path is None:
             inchitrust_path = os.getenv("INCHITRUST_PATH")
 
@@ -269,88 +272,6 @@ class InChi:
             return False
 
         return taut1 == taut2
-
-    def get_scaffold(mol):
-        return MurckoScaffold.GetScaffoldForMol(mol)
-
-    #TODO: CORRECT METHOD
-    def get_substituent_signatures(mol, scaffold):
-        scaffold_atoms = {a.GetIdx() for a in scaffold.GetAtoms()}
-        visited = set()
-        substituents = []
-
-        for atom in mol.GetAtoms():
-            idx = atom.GetIdx()
-
-            if idx in scaffold_atoms or idx in visited:
-                continue
-
-            stack = [idx]
-            frag_atoms = set()
-
-            while stack:
-                current = stack.pop()
-
-                if current in visited:
-                    continue
-
-                visited.add(current)
-                frag_atoms.add(current)
-
-                atom_obj = mol.GetAtomWithIdx(current)
-
-                for nbr in atom_obj.GetNeighbors():
-                    nbr_idx = nbr.GetIdx()
-
-                    if nbr_idx not in scaffold_atoms and nbr_idx not in visited:
-                        stack.append(nbr_idx)
-
-            smiles = Chem.MolFragmentToSmiles(
-                mol,
-                atomsToUse=list(frag_atoms),
-                canonical=True,
-                isomericSmiles=False
-            )
-
-            substituents.append(smiles)
-
-        return Counter(substituents)
-
-    def substituent_position_independent_signature(inchi):
-        mol = InChi.mol_from_inchi(inchi)
-
-        if mol is None:
-            return None
-
-        # STEP 1 — remove salts
-        mol = InChi.main_fragment(mol)
-
-        # STEP 2 — neutralize
-        mol = InChiParser.neutralize_molecule(mol)
-
-        # STEP 3 — Murcko scaffold
-        scaffold = InChi.get_scaffold(mol)
-
-        scaffold_smiles = Chem.MolToSmiles(
-            scaffold,
-            canonical=True,
-            isomericSmiles=False
-        )
-
-        # STEP 4 — substituent multiset
-        subs = InChi.get_substituent_signatures(mol, scaffold)
-
-        return (scaffold_smiles, subs)
-
-
-    def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
-        sig1 = InChi.substituent_position_independent_signature(inchi1)
-        sig2 = InChi.substituent_position_independent_signature(inchi2)
-
-        if sig1 is None or sig2 is None:
-            return False
-
-        return sig1 == sig2
 
 
     """

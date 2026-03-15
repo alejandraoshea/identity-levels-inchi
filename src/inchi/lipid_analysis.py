@@ -99,7 +99,6 @@ class LipidAnalysis:
     # STEP 5: build lipid signature
     @staticmethod
     def lipid_signature(mol):
-        LipidAnalysis.remove_cis_trans(mol)
         head_atoms = LipidAnalysis.detect_head_atoms(mol)
 
         if not head_atoms:
