@@ -18,9 +18,12 @@ class LipidAnalysis:
     @staticmethod
     def remove_cis_trans(mol):
         for bond in mol.GetBonds():
-            if bond.GetBondType() == Chem.BondType.DOUBLE:
-                bond.SetStereo(Chem.BondStereo.STEREONONE)
-
+            if (
+                bond.GetBondType() == Chem.BondType.DOUBLE
+                and bond.GetBeginAtom().GetAtomicNum() == 6
+                and bond.GetEndAtom().GetAtomicNum() == 6):
+                    bond.SetStereo(Chem.BondStereo.STEREONONE)
+                
         Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
 
     # STEP 2 detect head atoms via SMARTS anchors
