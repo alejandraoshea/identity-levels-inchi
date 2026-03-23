@@ -8,3 +8,4 @@ dependencies:
   - pip:
     - pandas
     - pyopenms>=3.4.0
+    - requests
