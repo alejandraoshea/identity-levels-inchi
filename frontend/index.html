@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>InChI Explorer</title>
+
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="panel">
+    <div class="title">InChI Identity Levels Comparison</div></br>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchMode(0,this)">Compare</button>
+        <button class="tab" onclick="switchMode(1,this)">Advanced</button>
+        <button class="tab" onclick="switchMode(2,this)">Files</button>
+    </div>
+
+    <div id="mode-0" class="tab-content active">
+        <textarea id="inchi1" placeholder="Molecule A (InChI)"></textarea>
+        <textarea id="inchi2" placeholder="Molecule B (InChI)"></textarea>
+        <button onclick="compare()">Compare</button>
+    </div>
+
+    <div id="mode-1" class="tab-content">
+        <p class="muted">Advanced tools coming soon</p>
+    </div>
+
+    <div id="mode-2" class="tab-content">
+        <p class="muted">File upload coming soon</p>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="center">
+        <div class="molecule-card">
+            <div class="molecule-header">Molecule A</div>
+            <div id="mol1" class="molecule"></div>
+        </div>
+        <div class="molecule-card">
+            <div class="molecule-header">Molecule B</div>
+            <div id="mol2" class="molecule"></div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <div class="title">Comparison Layers</div></br>
+    <div class="layer" data-key="complete">Complete Identity</div>
+    <div class="layer" data-key="isotope">Isotopes Independence</div>
+    <div class="layer" data-key="salt">Salts Independence</div>
+    <div class="layer" data-key="charge">Charges Independence</div>
+    <div class="layer" data-key="stereo">Stereo Independence</div>
+    <div class="layer" data-key="double">Double Bonds Independence</div>
+    <div class="layer" data-key="tautomer">Tautomer Independence</div>
+    <div class="layer" data-key="substituent">Substituent Independence</div>
+</div>
+
+</div>
+
+<script src="js/scripts.js"></script>
+
+</body>
+</html>
