@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem import rdmolops
+from rdkit.Chem import inchi
 from rdkit.Chem.SaltRemover import SaltRemover
 from inchi.inchi_parser import InChiParser
 from inchi.inchi_layers_enum import InchiLayers
@@ -23,13 +24,16 @@ class InChi:
         except Exception as e:
             print(f"RDKit conversion failed for InChI: {inchi}\nError: {e}")
             return None
-    
+
+
     def main_fragment(mol):
-        remover = SaltRemover()
         try:
-            mol_clean = remover.StripMol(mol, dontRemoveEverything=True)
-            Chem.AssignStereochemistry(mol_clean, cleanIt=True, force=True)
-            return mol_clean
+            frags = Chem.GetMolFrags(mol, asMols=True)
+            # pick largest fragment (most atoms)
+            main = max(frags, key=lambda m: m.GetNumAtoms())
+            Chem.SanitizeMol(main)
+            Chem.AssignStereochemistry(main, cleanIt=True, force=True)
+            return main
         except Exception:
             return mol
     
@@ -38,17 +42,24 @@ class InChi:
         inchi2_isotopes = InChiParser.removeIsotopicLayers(inchi2)
         return inchi1_isotopes == inchi2_isotopes
     
- 
     def areEqualDisolvedSalts(inchi1: str, inchi2: str) -> bool:
         mol1 = InChi.mol_from_inchi(inchi1)
         mol2 = InChi.mol_from_inchi(inchi2)
+
         if not mol1 or not mol2:
             return False    
+
         main1 = InChi.main_fragment(mol1)
-        main2 = InChi.main_fragment(mol2)      
-        return Chem.MolToInchi(main1) == Chem.MolToInchi(main2)
+        main2 = InChi.main_fragment(mol2)
+
+        try:
+            inchi_main1 = inchi.MolToInchi(main1)
+            inchi_main2 = inchi.MolToInchi(main2)
+        except Exception:
+            return False
+
+        return inchi_main1 == inchi_main2
     
- 
     #helper method: detect negative charge to neutralize the mol
     def has_negative_charge(inchi: str) -> bool:
         for part in inchi.split("/"):
