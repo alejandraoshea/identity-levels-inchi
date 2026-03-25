@@ -9,12 +9,16 @@ class LipidAnalysis:
     HEAD_ANCHORS = {
         "phosphate": Chem.MolFromSmarts("P(=O)(O)(O)"), #detects phospolipids
         "phosphocholine": Chem.MolFromSmarts("P(=O)(O)(O)OCC[N+](C)(C)C"),
+        "phosphoethanolamine": Chem.MolFromSmarts("P(=O)(O)(O)OCCN"),
+        "phosphoserine": Chem.MolFromSmarts("P(=O)(O)(O)OCC(N)C(=O)O"),
         "amine": Chem.MolFromSmarts("[NX3;H2,H1,H0;+0,+1]"), #detects nitrogen group like ethanolamine, choline, serine
         "quaternary_amine": Chem.MolFromSmarts("[NX4+]"),
         "amide": Chem.MolFromSmarts("C(=O)N"), #detects sphingolipid linkages
         "sugar_ring": Chem.MolFromSmarts("C1OC(O)C(O)C(O)C1O"), #detects glycolipid heads
         "glycerol": Chem.MolFromSmarts("OCC(O)CO"),
         "carboxyl": Chem.MolFromSmarts("C(=O)[O;H,-]"), #detects FA headgroups
+        "sulfonate": Chem.MolFromSmarts("S(=O)(=O)O"),
+        "sterol_core": Chem.MolFromSmarts("C1CCC2C(C1)CCC3C2CCC4C3CCCC4"),
     }
 
     #min chain length to consider it a FA
@@ -25,34 +29,27 @@ class LipidAnalysis:
         if mol is None:
             return False
 
-        # 1. Hydrophobic requirement
         has_chain = LipidAnalysis.has_long_carbon_chain(mol, min_len=8)
-
-        if not has_chain:
-            return False
-
-        # 2. Headgroup detection
         head_atoms = LipidAnalysis.detect_head_atoms(mol)
-        has_head = len(head_atoms) > 0
-
-        # 3. Linkages
         ester, amide, ether = LipidAnalysis.count_lipid_linkages(mol)
 
-        # Case A: classic lipids (glycerolipids, phospholipids)
-        if has_head and (ester >= 1 or ether >= 1):
+        # Strong lipid signal
+        if has_chain and len(head_atoms) > 0:
             return True
 
-        # Case B: sphingolipids
-        if amide >= 1 and has_chain:
+        # Fatty acids
+        if has_chain and mol.HasSubstructMatch(LipidAnalysis.HEAD_ANCHORS["carboxyl"]):
             return True
 
-        # Case C: fatty acids (no head needed)
-        if ester == 0 and amide == 0:
-            # detect COOH + chain
-            if mol.HasSubstructMatch(LipidAnalysis.HEAD_ANCHORS["carboxyl"]):
-                return True
+        # Sphingolipids
+        if has_chain and amide >= 1:
+            return True
 
-        # Case D: sterol-like (very rough heuristic)
+        # Glycerolipids
+        if has_chain and (ester >= 2 or ether >= 2):
+            return True
+
+        # Sterols
         ring_info = mol.GetRingInfo()
         if ring_info.NumRings() >= 4 and has_chain:
             return True
