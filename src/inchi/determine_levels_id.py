@@ -193,9 +193,10 @@ class InChi:
         C) Posición dobles enlaces y oxígeno
         D) Número de dobles enlaces y oxígenos
         """
-
         # STEP 5: double bond comparison
-        return LipidAnalysis.equal_ignore_double_bond_position(mol1, mol2)
+        levels = LipidAnalysis.lipid_identity_levels(mol1, mol2)
+
+        return levels["E3"]
     
    
     def run_inchitrust(mol, inchitrust_path):

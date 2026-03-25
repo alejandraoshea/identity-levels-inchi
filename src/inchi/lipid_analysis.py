@@ -98,12 +98,6 @@ class LipidAnalysis:
 
     @staticmethod
     def is_lipid(inchi: str, mol=None, use_classyfire=True) -> bool:
-        """
-        Hybrid lipid detection:
-        1. ClassyFire
-        2. If False → fallback to RDKit heuristic
-        """
-
         if mol is None:
             mol = Chem.MolFromInchi(inchi)
             if mol is None:
@@ -174,6 +168,61 @@ class LipidAnalysis:
                     ether += 1
 
         return ester, amide, ether
+
+    @staticmethod
+    def lipid_identity_levels(mol1, mol2):
+        """
+        Returns lipid identity levels
+        Level A: Cis/trans y resto idéntico
+        Level B: Posicion cadenas
+        Level C: Posición dobles enlaces y oxígeno
+        Level D: Número de dobles enlaces y oxígenos
+        """
+
+        # Step 0: remove cis/trans 
+        mol1_no_stereo = Chem.Mol(mol1)
+        mol2_no_stereo = Chem.Mol(mol2)
+
+        LipidAnalysis.remove_cis_trans(mol1_no_stereo)
+        LipidAnalysis.remove_cis_trans(mol2_no_stereo)
+
+        # Extract detailed tail info
+        tails1 = LipidAnalysis.extract_detailed_tails(mol1)
+        tails2 = LipidAnalysis.extract_detailed_tails(mol2)
+
+        # Level A: exact chains (including DB positions, excluding cis/trans)
+        LEVELA = tails1 == tails2
+
+        # Level B: same chains ignoring position (sn-1/sn-2 swap)
+        LEVELB = sorted(tails1) == sorted(tails2)
+
+        # Level 3: ignore DB positions → keep only (#C, #DB, #O)
+        sig1_E3 = sorted([(t["C"], t["DB"], t["O"]) for t in tails1])
+        sig2_E3 = sorted([(t["C"], t["DB"], t["O"]) for t in tails2])
+
+        LEVELC = sig1_E3 == sig2_E3
+
+        # Level 4: total composition
+        total1 = (
+            sum(t["C"] for t in tails1),
+            sum(t["DB"] for t in tails1),
+            sum(t["O"] for t in tails1),
+        )
+
+        total2 = (
+            sum(t["C"] for t in tails2),
+            sum(t["DB"] for t in tails2),
+            sum(t["O"] for t in tails2),
+        )
+
+        LEVELD = total1 == total2
+
+        return {
+        "LEVELA": LEVELA,
+        "LEVELB": LEVELB,
+        "LEVELC": LEVELC,
+        "LEVELD": LEVELD
+    }
 
     # STEP 1 remove cis/trans stereochemistry
     @staticmethod
@@ -251,6 +300,53 @@ class LipidAnalysis:
                     tails.append(tail_atoms)
 
         return tails
+
+    @staticmethod
+    def extract_detailed_tails(mol):
+        head_atoms = LipidAnalysis.detect_head_atoms(mol)
+
+        if not head_atoms:
+            return []
+
+        tails = LipidAnalysis.extract_tails(mol, head_atoms)
+
+        detailed = []
+
+        for tail in tails:
+            carbons = 0
+            double_bonds = 0
+            oxygens = 0
+            db_positions = []
+
+            for idx in tail:
+                atom = mol.GetAtomWithIdx(idx)
+
+                if atom.GetAtomicNum() == 6:
+                    carbons += 1
+                elif atom.GetAtomicNum() == 8:
+                    oxygens += 1
+
+                for bond in atom.GetBonds():
+                    if bond.GetBondType() == Chem.BondType.DOUBLE:
+                        if bond.GetBeginAtom().GetAtomicNum() == 6 and bond.GetEndAtom().GetAtomicNum() == 6:
+                            double_bonds += 1
+
+                            # crude position proxy (atom index)
+                            db_positions.append(tuple(sorted([
+                                bond.GetBeginAtomIdx(),
+                                bond.GetEndAtomIdx()
+                            ])))
+
+            double_bonds //= 2
+
+            detailed.append({
+                "C": carbons,
+                "DB": double_bonds,
+                "O": oxygens,
+                "DB_pos": sorted(db_positions)
+            })
+
+        return detailed
 
     # STEP 4 compute tail signature
     @staticmethod
