@@ -16,8 +16,8 @@
 
 <div class="container">
 
-<div class="panel">
-    <div class="title">InChI Identity Levels Comparison</div></br>
+  <div class="panel">
+    <div class="title">InChI Identity Levels Comparison</div><br>
 
     <div class="tabs">
         <button class="tab active" data-mode="compare">Compare</button>
@@ -32,89 +32,51 @@
     </div>
 
     <div id="mode-advanced" class="tab-content">
-        <textarea id="inchi1" placeholder="Molecule A (InChI)"></textarea>
-        <textarea id="inchi2" placeholder="Molecule B (InChI)"></textarea>
-
+        <textarea id="inchi1_adv" placeholder="Molecule A (InChI)"></textarea>
+        <textarea id="inchi2_adv" placeholder="Molecule B (InChI)"></textarea>
         <button onclick="compare(true)">Compare</button>
     </div>
 
     <div id="mode-files" class="tab-content">
-        <p class="muted">File upload coming soon</p>
+        <div id="file-results"></div>
     </div>
+  </div>
+
+  <div class="panel center">
+    <div class="molecule-card">
+        <div class="molecule-header">Molecule A</div>
+        <div id="mol1" class="molecule"></div>
+    </div>
+    <div class="molecule-card">
+        <div class="molecule-header">Molecule B</div>
+        <div id="mol2" class="molecule"></div>
+    </div>
+  </div>
+  <div id="layers-compare" class="layers-container">
+    <div class="layer" data-key="complete_identity">Complete Identity</div>
+    <div class="layer" data-key="isotope">Isotope Independence</div>
+    <div class="layer" data-key="salt">Salt Independence</div>
+    <div class="layer" data-key="charge">Charge Independence</div>
+    <div class="layer" data-key="double_bond">Double Bond Independence</div>
+    <div class="layer" data-key="cis_trans">Cis/Trans Independence</div>
+    <div class="layer" data-key="tautomer">Tautomer Independence</div>
+    <div class="layer" data-key="substituent">Substituent Independence</div>
+    </div>
+
+    <div id="layers-advanced" class="layers-container" style="display:none;">
+    <div class="layer"><label><input type="checkbox" value="complete_identity"> Complete Identity</label></div>
+    <div class="layer"><label><input type="checkbox" value="isotope"> Isotope Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="salt"> Salt Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="charge"> Charge Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="double_bond"> Double Bond Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="cis_trans"> Cis/Trans Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="tautomer"> Tautomer Independence</label></div>
+    <div class="layer"><label><input type="checkbox" value="substituent"> Substituent Independence</label></div>
+    </div>
+
 </div>
 
-<div class="panel">
-    <div class="center">
-        <div class="molecule-card">
-            <div class="molecule-header">Molecule A</div>
-            <div id="mol1" class="molecule"></div>
-        </div>
-        <div class="molecule-card">
-            <div class="molecule-header">Molecule B</div>
-            <div id="mol2" class="molecule"></div>
-        </div>
-    </div>
-</div>
-
-<div class="panel">
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="complete_identity">
-            Complete Identity
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="isotope">
-            Isotopes Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="salt">
-            Salts Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="charge">
-            Charges Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="double_bond">
-            Double Bonds Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="cis_trans">
-            Cis/Trans Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="tautomer">
-            Tautomer Independence
-        </label>
-    </div>
-
-    <div class="layer">
-        <label>
-            <input type="checkbox" value="substituent">
-            Substituent Independence
-        </label>
-    </div>
-</div>
-
-</div>
+<div id="toast-container"></div>
 
 <script src="js/scripts.js"></script>
 
