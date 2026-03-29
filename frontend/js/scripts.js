@@ -80,12 +80,13 @@ async function compare(isAdvanced = false) {
 
     draw(inchi1, inchi2);
 
-    let url = "/api/compare_inchis";
+    let url = "http://127.0.0.1:5000/api/compare_inchis";
     let body = { inchi1, inchi2 };
 
     if (isAdvanced) {
-        url = "/api/compare_inchis_custom";
+        url = "http://127.0.0.1:5000/api/compare_inchis_custom";
         body.levels = Array.from(document.querySelectorAll(".level-checkbox:checked")).map(cb => cb.value);
+        console.log("SELECTED LEVELS:", body.levels);
     }
 
     try {
@@ -95,10 +96,25 @@ async function compare(isAdvanced = false) {
             body: JSON.stringify(body)
         });
 
-        const data = await res.json();
+        const text = await res.text();
+
+        console.log("RAW RESPONSE:", text);
+
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch {
+            showToast("Server returned invalid JSON", "error");
+            return;
+        }
+
+        if (!res.ok) {
+            showToast(data.message || "Error", "error");
+            return;
+        }
         if (!res.ok) { showToast(data.message || "Error", "error"); return; }
 
-        updateLayers(mapBackendResults(data.results));
+        updateLayers(mapBackendResults(data.results), isAdvanced);
 
     } catch (err) {
         console.error(err);
@@ -108,21 +124,39 @@ async function compare(isAdvanced = false) {
 
 function mapBackendResults(results) {
     return {
-        complete_identity: results.complete_identity,
-        isotope: results.isotope_independence,
-        salt: results.salt_independence,
-        charge: results.charge_independence,
-        stereo: results.isomer_independence,
-        double_bond: results.double_bond_independence,
-        tautomer: results.tautomer_independence,
-        substituent: results.substituent_independence
+        complete_identity: results.COMPLETE_IDENTITY,
+        isotope: results.ISOTOPIC_INDEPENDENCE,
+        salt: results.SALTS_INDEPENDENCE,
+        charge: results.CHARGES_INDEPENDENCE,
+        stereo_cis_trans: results.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE,
+        double_bond: results.DOUBLE_BONDS_INDEPENDENCE,
+        tautomer: results.TAUTOMER_INDEPENDENCE,
+        substituent: results.SUBSTITUENT_POSITION_INDEPENDENCE
     };
 }
 
-function updateLayers(results) {
+function updateLayers(results, isAdvanced = false) {
     document.querySelectorAll(".layer").forEach(layer => {
-        const checkbox = layer.querySelector("input");
-        const key = checkbox.value;
+
+        let key = null;
+        let checkbox = layer.querySelector("input");
+
+        if (checkbox) {
+            key = checkbox.value;
+
+            if (isAdvanced && !checkbox.checked) {
+                layer.style.display = "none";
+                return;
+            } else {
+                layer.style.display = "block";
+            }
+
+        } else {
+            key = layer.dataset.key;
+        }
+
+        if (!key) return;
+
         const match = results[key];
 
         let badge = layer.querySelector(".badge");
@@ -132,19 +166,24 @@ function updateLayers(results) {
             layer.appendChild(badge);
         }
 
-        if (match) {
+        if (match === true) {
             layer.classList.add("match");
             layer.classList.remove("nomatch");
             badge.className = "badge green";
             badge.innerText = "INDEPENDENT";
-        } else {
+        } else if (match === false) {
             layer.classList.add("nomatch");
             layer.classList.remove("match");
             badge.className = "badge red";
             badge.innerText = "NOT INDEPENDENT";
+        } else {
+            layer.classList.remove("match", "nomatch");
+            badge.className = "badge";
+            badge.innerText = "N/A";
         }
     });
 }
+
 
 function showToast(message, type = "info", duration = 4000) {
     const container = document.getElementById("toast-container");

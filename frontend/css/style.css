@@ -228,9 +228,17 @@ button:hover {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.toast-success { background-color: #4caf50; }
-.toast-error { background-color: #f44336; }
-.toast-info { background-color: #2196f3; }
+.toast-success { 
+    background-color: #4caf50; 
+}
+
+.toast-error { 
+    background-color: #f44336; 
+}
+
+.toast-info { 
+    background-color: #2196f3; 
+}
 
 @keyframes slideIn {
   from {
