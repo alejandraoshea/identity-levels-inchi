@@ -3,9 +3,9 @@ from rdkit.Chem import rdFMCS
 from rdkit.Chem import rdmolops
 from rdkit.Chem import inchi
 from rdkit.Chem.SaltRemover import SaltRemover
-from inchi.inchi_parser import InChiParser
-from inchi.inchi_layers_enum import InchiLayers
-from inchi.lipid_analysis import LipidAnalysis
+from backend.inchi.inchi_parser import InChiParser
+from backend.inchi.inchi_layers_enum import InchiLayers
+from backend.inchi.lipid_analysis import LipidAnalysis
 import subprocess, os
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from collections import Counter

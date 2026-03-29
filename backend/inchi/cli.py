@@ -1,5 +1,5 @@
 import argparse
-from inchi.compare import compare_files
+from backend.inchi.compare import compare_files
 
 def main():
     parser = argparse.ArgumentParser(
@@ -13,8 +13,7 @@ def main():
     compare_parser = subparsers.add_parser(
         "compare",
         help="Compare two txt files containing InChIs"
-    ) #for now its txt 
-    #TODO: also read mgf files
+    ) 
 
     compare_parser.add_argument("file1")
     compare_parser.add_argument("file2")

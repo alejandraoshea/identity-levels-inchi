@@ -2,7 +2,7 @@
   "identity_criteria": {
 
     "complete_identity": {
-      "complete_identity": true
+      "enabled": true
     },
 
     "isotope_independence": {
