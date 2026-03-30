@@ -4,27 +4,6 @@ initRDKitModule().then(instance => {
     RDKit = instance;
 });
 
-
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    const mode = tab.dataset.mode;
-
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    document.getElementById("mode-" + mode).classList.add("active");
-
-    if (mode === "advanced") {
-      document.getElementById("layers-compare").style.display = "none";
-      document.getElementById("layers-advanced").style.display = "block";
-    } else {
-      document.getElementById("layers-compare").style.display = "block";
-      document.getElementById("layers-advanced").style.display = "none";
-    }
-  });
-});
-
 function updateLayerVisibility(mode) {
     const container = document.getElementById("layers-container");
     if (mode === "advanced") {
@@ -34,9 +13,9 @@ function updateLayerVisibility(mode) {
     }
 }
 
-async function draw(inchi1, inchi2) {
-    visualizeFromInchi("mol1", inchi1);
-    visualizeFromInchi("mol2", inchi2);
+function draw(inchi1, inchi2, id1 = "mol1", id2 = "mol2") {
+    visualizeFromInchi(id1, inchi1);
+    visualizeFromInchi(id2, inchi2);
 }
 
 async function visualizeFromInchi(containerId, inchi) {
@@ -184,7 +163,6 @@ function updateLayers(results, isAdvanced = false) {
     });
 }
 
-
 function showToast(message, type = "info", duration = 4000) {
     const container = document.getElementById("toast-container");
     if (!container) return;
@@ -202,4 +180,125 @@ function showToast(message, type = "info", duration = 4000) {
 
         toast.addEventListener("transitionend", () => toast.remove());
     }, duration);
+}
+
+let file1Data = [];
+let file2Data = [];
+let comparisonsData = []; // store backend results
+
+document.getElementById("file1").addEventListener("change", async (e) => {
+    file1Data = await readFile(e.target.files[0]);
+});
+
+document.getElementById("file2").addEventListener("change", async (e) => {
+    file2Data = await readFile(e.target.files[0]);
+});
+
+async function readFile(file) {
+    const text = await file.text();
+    return text.split("\n").map(l => l.trim()).filter(Boolean);
+}
+
+document.getElementById("compare-files-btn").addEventListener("click", async () => {
+
+    if (!file1Data.length || !file2Data.length) {
+        showToast("Upload both files", "error");
+        return;
+    }
+
+    const res = await fetch("http://127.0.0.1:5000/api/compare_files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            list1: file1Data,
+            list2: file2Data
+        })
+    });
+
+    const data = await res.json();
+
+    console.log("FILE RESULTS:", data);
+
+    comparisonsData = data.comparisons;
+
+    populateDropdown(comparisonsData);
+});
+
+function populateDropdown(comparisons) {
+    const container = document.getElementById("file-results-container");
+
+    container.innerHTML = "";
+
+    comparisons.forEach((comp, index) => {
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "file-item";
+
+        const header = document.createElement("div");
+        header.className = "file-header";
+        header.textContent =
+            `${index + 1} — ${comp.inchi_1.substring(0,500)}...`;
+
+        const content = document.createElement("div");
+        content.className = "file-content";
+        content.style.display = "none";
+
+        content.innerHTML = `
+            <div style="display:flex; gap:10px;">
+                <div id="mol1-${index}" style="flex:1; height:300px;"></div>
+                <div id="mol2-${index}" style="flex:1; height:300px;"></div>
+            </div>
+            <div id="layers-${index}" style="margin-top:10px;"></div>
+        `;
+
+        header.onclick = () => {
+            content.style.display =
+                content.style.display === "none" ? "block" : "none";
+
+            if (content.dataset.loaded) return;
+
+            setTimeout(() => {
+                draw(
+                    comp.inchi_1,
+                    comp.inchi_2,
+                    `mol1-${index}`,
+                    `mol2-${index}`
+                );
+            }, 100);
+
+            const layersDiv = content.querySelector(`#layers-${index}`);
+            layersDiv.innerHTML = "";
+
+            const mapped = mapBackendResults(comp.results);
+
+            Object.entries(mapped).forEach(([key, val]) => {
+                const div = document.createElement("div");
+                div.className = "layer";
+
+                div.innerHTML = `
+                    <span>${key}</span>
+                    <span class="badge ${val ? "green" : "red"}">
+                        ${val ? "INDEPENDENT" : "NOT"}
+                    </span>
+                `;
+
+                layersDiv.appendChild(div);
+            });
+
+            content.dataset.loaded = true;
+        };
+
+        wrapper.appendChild(header);
+        wrapper.appendChild(content);
+        container.appendChild(wrapper);
+    });
+}
+
+
+function renderComparison(comp) {
+    const { inchi_1, inchi_2, results } = comp;
+
+    draw(inchi_1, inchi_2);
+    updateLayers(mapBackendResults(results), false);
+    console.log("Selected:", comp);
 }

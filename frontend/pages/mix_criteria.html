@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Advanced</title>
+
+<link rel="stylesheet" href="../css/style.css">
+<script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
+</head>
+
+<body>
+    <div class="header">
+        <div class="title">InChI Explorer</div>
+        <div class="nav">
+            <a href="compare.html">Compare</a>
+            <a href="mix_criteria.html">Advanced</a>
+            <a href="files.html">Files</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+                <textarea id="inchi1_adv" placeholder="Molecule A (InChI)"></textarea>
+                <textarea id="inchi2_adv" placeholder="Molecule B (InChI)"></textarea>
+                <button onclick="compare(true)">Compare</button>
+        </div>
+   
+    <div class="panel center">
+        <div class="molecule-card">
+            <div class="molecule-header">Molecule A</div>
+            <div id="mol1" class="molecule"></div>
+        </div>
+        <div class="molecule-card">
+            <div class="molecule-header">Molecule B</div>
+            <div id="mol2" class="molecule"></div>
+        </div>
+    </div>
+
+    <div id="layers-advanced" class="layers-container">
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="complete_identity"> Complete Identity</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="isotope"> Isotope Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="salt"> Salt Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="charge"> Charge Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="double_bond"> Double Bond Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="stereo_cis_trans"> Cis/Trans Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="tautomer"> Tautomer Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="substituent"> Substituent Independence</label></div>
+    </div>
+</div>
+
+
+<script src="../js/scripts.js"></script>
+</body>
+</html>

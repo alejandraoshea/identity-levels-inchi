@@ -18,29 +18,55 @@
     <div class="panel">
         <div class="title">InChI Identity Levels Comparison</div><br>
 
+        <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" data-mode="compare">Compare</button>
             <button class="tab" data-mode="advanced">Advanced</button>
             <button class="tab" data-mode="files">Files</button>
         </div>
 
+        <!-- Compare Tab -->
         <div id="mode-compare" class="tab-content active">
             <textarea id="inchi1" placeholder="Molecule A (InChI)"></textarea>
             <textarea id="inchi2" placeholder="Molecule B (InChI)"></textarea>
             <button onclick="compare()">Compare</button>
         </div>
 
+        <!-- Advanced Tab -->
         <div id="mode-advanced" class="tab-content">
             <textarea id="inchi1_adv" placeholder="Molecule A (InChI)"></textarea>
             <textarea id="inchi2_adv" placeholder="Molecule B (InChI)"></textarea>
             <button onclick="compare(true)">Compare</button>
         </div>
 
+        <!-- Files Tab -->
         <div id="mode-files" class="tab-content">
-            <div id="file-results"></div>
+            <div class="file-upload">
+                <label class="file-btn">
+                    Upload File A
+                    <input type="file" id="file1" hidden>
+                </label>
+                <label class="file-btn">
+                    Upload File B
+                    <input type="file" id="file2" hidden>
+                </label>
+                <button id="compare-files-btn">Compare Files</button>
+            </div>
+
+            <!-- Dropdown container -->
+            <div id="file-dropdown-container" style="margin-top: 12px;"></div>
+
+            <!-- 3D/2D viewer for selected pair -->
+            <div id="file-viewer" style="height: 300px; margin-top: 12px; background: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                Molecule Viewer
+            </div>
+
+            <!-- Results panel -->
+            <div id="file-results" style="margin-top: 12px;"></div>
         </div>
     </div>
 
+    <!-- Molecule Cards (Compare & Advanced) -->
     <div class="panel center">
         <div class="molecule-card">
             <div class="molecule-header">Molecule A</div>
@@ -51,6 +77,8 @@
             <div id="mol2" class="molecule"></div>
         </div>
     </div>
+
+    <!-- Layers for Compare -->
     <div id="layers-compare" class="layers-container">
         <div class="layer" data-key="complete_identity">Complete Identity</div>
         <div class="layer" data-key="isotope">Isotope Independence</div>
@@ -62,62 +90,21 @@
         <div class="layer" data-key="substituent">Substituent Independence</div>
     </div>
 
+    <!-- Layers for Advanced -->
     <div id="layers-advanced" class="layers-container" style="display:none;">
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="complete_identity">
-                <span class="layer-label">Complete Identity</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="isotope">
-                <span class="layer-label">Isotope Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="salt">
-                <span class="layer-label">Salt Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="charge">
-                <span class="layer-label">Charge Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="double_bond"> 
-                <span class="layer-label">Double Bond Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="stereo_cis_trans">
-                <span class="layer-label">Cis/Trans Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="tautomer">
-                <span class="layer-label">Tautomer Idenpendence</span>
-            </label>
-        </div>
-        <div class="layer">
-            <label>
-                <input type="checkbox" class="level-checkbox" value="substituent">
-                <span class="layer-label">Substituent Idenpendence</span>
-            </label>
-        </div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="complete_identity"> Complete Identity</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="isotope"> Isotope Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="salt"> Salt Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="charge"> Charge Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="double_bond"> Double Bond Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="stereo_cis_trans"> Cis/Trans Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="tautomer"> Tautomer Independence</label></div>
+        <div class="layer"><label><input type="checkbox" class="level-checkbox" value="substituent"> Substituent Independence</label></div>
     </div>
-
 </div>
 
 <div id="toast-container"></div>
 
 <script src="js/scripts.js"></script>
-
 </body>
 </html>
