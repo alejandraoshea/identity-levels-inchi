@@ -76,3 +76,34 @@ def get_inchi_levels():
         {"key": "tautomer", "label": "Tautomer Independence"},
         {"key": "substituent", "label": "Substituent Independence"}
     ])
+
+@inchi_comparison_routes.route("/api/compare_files", methods=["POST"])
+def compare_files_api():
+    try:
+        data = request.get_json()
+
+        list1 = data.get("list1", [])
+        list2 = data.get("list2", [])
+
+        if not list1 or not list2:
+            return jsonify({"message": "Both lists required"}), 400
+
+        config = load_config()
+
+        results = []
+
+        for i1 in list1:
+            for i2 in list2:
+                comparison = InChi.get_ids(i1, i2, config)
+
+                results.append({
+                    "inchi_1": i1,
+                    "inchi_2": i2,
+                    "results": {k.name: v for k, v in comparison.items()}
+                })
+
+        return jsonify({"comparisons": results})
+
+    except Exception as e:
+        print("ERROR:", e)
+        return jsonify({"message": str(e)}), 500
