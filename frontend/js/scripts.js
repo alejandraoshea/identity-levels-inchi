@@ -238,25 +238,22 @@ function populateDropdown(comparisons) {
         const wrapper = document.createElement("div");
         wrapper.className = "file-item";
 
-        // Header for collapsing/expanding
         const header = document.createElement("div");
         header.className = "file-header";
-        header.textContent = `${index + 1} — ${comp.inchi_1.substring(0, 100)}...`;
+        header.textContent = `${index + 1}. InChI 1 vs InChI 2`;
 
-        // Content container
         const content = document.createElement("div");
         content.className = "file-content";
         content.style.display = "none";
 
-        // Molecules + layers structure
         content.innerHTML = `
             <div class="molecule-row">
                 <div class="molecule-card">
-                    <div class="molecule-header">Molecule A</div>
+                    <div class="molecule-header inchi-text">${comp.inchi_1}</div>
                     <div id="mol1-${index}" class="molecule"></div>
                 </div>
                 <div class="molecule-card">
-                    <div class="molecule-header">Molecule B</div>
+                    <div class="molecule-header inchi-text">${comp.inchi_2}</div>
                     <div id="mol2-${index}" class="molecule"></div>
                 </div>
             </div>
@@ -267,12 +264,10 @@ function populateDropdown(comparisons) {
             content.style.display = content.style.display === "none" ? "block" : "none";
             if (content.dataset.loaded) return;
 
-            // Draw molecules after layout is ready
             requestAnimationFrame(() => {
                 draw(comp.inchi_1, comp.inchi_2, `mol1-${index}`, `mol2-${index}`);
             });
 
-            // Populate layers
             const layersDiv = content.querySelector(`#layers-${index}`);
             layersDiv.innerHTML = "";
             layersDiv.className = "layers-grid";

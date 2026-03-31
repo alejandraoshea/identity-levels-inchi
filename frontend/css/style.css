@@ -95,7 +95,13 @@ body {
 
 .title { 
     font-size:20px; 
-    font-weight:700; 
+    font-weight:700;
+} 
+
+.title-section { 
+    font-size:18px; 
+    font-weight: 500;
+    margin-bottom: 20px; 
 } 
 
 .subtitle { 
@@ -313,13 +319,23 @@ button:hover {
     font-size: 12px;
     background: #e3eef7;
 
-    border-radius: 8px; /* FULL rounding */
+    border-radius: 8px; 
 }
 
-/* when open → connect with content */
 .file-item.open .file-header {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
+}
+
+.inchi-text {
+    font-size: 11px;
+    font-weight: 500;
+    word-break: break-all;   
+    white-space: normal;      
+    overflow-wrap: anywhere;  
+    line-height: 1.3;
+    max-height: 80px;         
+    overflow-y: auto;         
 }
 
 #toast-container {
