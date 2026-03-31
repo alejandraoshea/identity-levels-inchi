@@ -203,6 +203,8 @@ document.getElementById("file2").addEventListener("change", async (e) => {
     e.target.parentElement.textContent = file.name;
 });
 
+
+
 async function readFile(file) {
     const text = await file.text();
     return text.split("\n").map(l => l.trim()).filter(Boolean);
