@@ -79,7 +79,7 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: 320px 1fr 280px;
+    grid-template-columns: 380px 1fr 320px;
     gap: 10px;
     padding: 10px;
     flex: 1; 
@@ -170,23 +170,30 @@ button:hover {
     gap: 10px;
     height: 300px;
 }
-    
+
 .molecule-row .molecule {
     flex: 1;
     height: 100%;
 }
 
-.layer { 
+.layers-grid {
+    display: grid !important;  
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, auto); 
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.layer {
     background:#e3eef7; 
-    padding:14px; 
+    padding:10px; 
     border-radius:12px; 
-    margin-bottom:10px; 
     cursor:pointer; 
     display:flex; 
     justify-content:space-between; 
-    align-items:center; transition:0.2s;
-    gap:12px;
-} 
+    align-items:center;
+    transition:0.2s;
+}
 
 .layer-label {
     font-weight: 500;
@@ -235,11 +242,12 @@ button:hover {
 
 .file-content {
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     gap: 10px;
+    padding: 10px;
 }
 
-.file-content > div { 
+.file-content > .molecule-row { 
     flex: 1;
     display: flex;
     gap: 10px;
@@ -301,13 +309,17 @@ button:hover {
 .file-header {
     padding: 10px;
     cursor: pointer;
-    font-weight: 200;
+    font-weight: 500;
     font-size: 12px;
     background: #e3eef7;
+
+    border-radius: 8px; /* FULL rounding */
 }
 
-.file-content {
-    padding: 10px;
+/* when open → connect with content */
+.file-item.open .file-header {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
 #toast-container {

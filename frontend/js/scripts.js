@@ -192,11 +192,15 @@ let file2Data = [];
 let comparisonsData = []; // store backend results
 
 document.getElementById("file1").addEventListener("change", async (e) => {
-    file1Data = await readFile(e.target.files[0]);
+    const file = e.target.files[0];
+    file1Data = await readFile(file);
+    e.target.parentElement.textContent = file.name;
 });
 
 document.getElementById("file2").addEventListener("change", async (e) => {
-    file2Data = await readFile(e.target.files[0]);
+    const file = e.target.files[0];
+    file2Data = await readFile(file);
+    e.target.parentElement.textContent = file.name;
 });
 
 async function readFile(file) {
