@@ -18,35 +18,35 @@
             <a href="files.html">Files</a>
         </div>
     </div>
-<div class="container">
-    <div class="panel">
-        <textarea id="inchi1" placeholder="Molecule A (InChI)"></textarea>
-        <textarea id="inchi2" placeholder="Molecule B (InChI)"></textarea>
-        <button onclick="compare()">Compare</button>
-    </div>
-
-    <div class="panel center">
-        <div class="molecule-card">
-            <div class="molecule-header">Molecule A</div>
-            <div id="mol1" class="molecule"></div>
+    <div class="container">
+        <div class="panel">
+            <textarea id="inchi1" placeholder="Molecule A (InChI)"></textarea>
+            <textarea id="inchi2" placeholder="Molecule B (InChI)"></textarea>
+            <button onclick="compare()">Compare</button>
         </div>
-        <div class="molecule-card">
-            <div class="molecule-header">Molecule B</div>
-            <div id="mol2" class="molecule"></div>
+
+        <div class="panel center">
+            <div class="molecule-card">
+                <div class="molecule-header">Molecule A</div>
+                <div id="mol1" class="molecule"></div>
+            </div>
+            <div class="molecule-card">
+                <div class="molecule-header">Molecule B</div>
+                <div id="mol2" class="molecule"></div>
+            </div>
+        </div>
+
+        <div id="layers-compare" class="panel">
+            <div class="layer" data-key="complete_identity">Complete Identity</div>
+            <div class="layer" data-key="isotope">Isotope Independence</div>
+            <div class="layer" data-key="salt">Salt Independence</div>
+            <div class="layer" data-key="charge">Charge Independence</div>
+            <div class="layer" data-key="double_bond">Double Bond Independence</div>
+            <div class="layer" data-key="stereo_cis_trans">Cis/Trans Independence</div>
+            <div class="layer" data-key="tautomer">Tautomer Independence</div>
+            <div class="layer" data-key="substituent">Substituent Independence</div>
         </div>
     </div>
-
-    <div id="layers-compare" class="layers-container">
-        <div class="layer" data-key="complete_identity">Complete Identity</div>
-        <div class="layer" data-key="isotope">Isotope Independence</div>
-        <div class="layer" data-key="salt">Salt Independence</div>
-        <div class="layer" data-key="charge">Charge Independence</div>
-        <div class="layer" data-key="double_bond">Double Bond Independence</div>
-        <div class="layer" data-key="stereo_cis_trans">Cis/Trans Independence</div>
-        <div class="layer" data-key="tautomer">Tautomer Independence</div>
-        <div class="layer" data-key="substituent">Substituent Independence</div>
-    </div>
-</div>
 
 <script src="../js/scripts.js"></script>
 </body>
