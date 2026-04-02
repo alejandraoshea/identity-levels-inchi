@@ -1,5 +1,5 @@
 import argparse
-from backend.inchi.compare import compare_files
+from backend.inchi.compare import compare_text_files, compare_pair
 
 def main():
     parser = argparse.ArgumentParser(
@@ -33,7 +33,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "compare":
-        compare_files(
+        compare_text_files(
             args.file1,
             args.file2,
             args.config,

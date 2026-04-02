@@ -3,21 +3,20 @@ from pathlib import Path
 from backend.inchi.config_loader import load_config
 from backend.inchi.determine_levels_id import InChi
 
-#TODO: add 3 case scenarios (1-1, specific levels, M-N)
-@staticmethod
-def compare_files(file1, file2, config_path=None, output_file=None):
-    config = load_config(config_path)
+def compare_pair(inchi1, inchi2, config):
+    comparison = InChi.get_ids(inchi1, inchi2, config)
 
-    with open(file1) as f:
-        inchi_list1 = [line.strip() for line in f if line.strip()]
+    return {
+        "inchi_1": inchi1,
+        "inchi_2": inchi2,
+        "results": {k.name: v for k, v in comparison.items()}
+    }
 
-    with open(file2) as f:
-        inchi_list2 = [line.strip() for line in f if line.strip()]
-
+def compare_text_files(list1, list2, config):
     results = []
 
-    for i1 in inchi_list1:
-        for i2 in inchi_list2:
+    for i1 in list1:
+        for i2 in list2:
             comparison = InChi.get_ids(i1, i2, config)
 
             results.append({
@@ -26,12 +25,4 @@ def compare_files(file1, file2, config_path=None, output_file=None):
                 "results": {k.name: v for k, v in comparison.items()}
             })
 
-    output = {
-        "comparisons": results
-    }
-
-    if output_file:
-        with open(output_file, "w") as f:
-            json.dump(output, f, indent=4)
-
-    return output
+    return {"comparisons": results}

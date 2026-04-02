@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from backend.inchi.compare import compare_files
+from backend.inchi.compare import compare_text_files, compare_pair
 from backend.inchi.determine_levels_id import InChi
 from backend.inchi.config_loader import load_config
 from backend.routes.inchi_comparison_routes import inchi_comparison_routes

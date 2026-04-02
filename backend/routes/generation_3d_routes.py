@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from backend.inchi.determine_levels_id import InChi
-from backend.inchi.compare import compare_files
+from backend.inchi.compare import compare_text_files, compare_pair
 from backend.inchi.config_loader import load_config, build_config_from_levels
 from rdkit import Chem
 from rdkit.Chem import AllChem

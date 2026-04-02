@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from backend.inchi.determine_levels_id import InChi
-from backend.inchi.compare import compare_files
+from backend.inchi.compare import compare_pair, compare_text_files
 from backend.inchi.config_loader import load_config, build_config_from_levels
 import tempfile
 from dotenv import load_dotenv
@@ -25,11 +25,8 @@ def compare_inchis():
 
         config = load_config()
 
-        comparison = InChi.get_ids(inchi1, inchi2, config)
-
-        results = {k.name: v for k, v in comparison.items()}
-
-        return jsonify({"results": results})
+        result = compare_pair(inchi1, inchi2, config)
+        return jsonify({"results": result["results"]})
 
     except Exception as e:
         print("ERROR:", e)
@@ -53,11 +50,8 @@ def compare_inchis_custom():
         base_config = load_config()
         config = build_config_from_levels(selected_levels, base_config)
 
-        comparison = InChi.get_ids(inchi1, inchi2, config)
-
-        results = {k.name: v for k, v in comparison.items()}
-
-        return jsonify({"results": results})
+        result = compare_pair(inchi1, inchi2, config)
+        return jsonify({"results": result["results"]})
 
     except Exception as e:
         print("ERROR:", e)
@@ -90,19 +84,8 @@ def compare_files_api():
 
         config = load_config()
 
-        results = []
-
-        for i1 in list1:
-            for i2 in list2:
-                comparison = InChi.get_ids(i1, i2, config)
-
-                results.append({
-                    "inchi_1": i1,
-                    "inchi_2": i2,
-                    "results": {k.name: v for k, v in comparison.items()}
-                })
-
-        return jsonify({"comparisons": results})
+        result = compare_text_files(list1, list2, config)
+        return jsonify(result)
 
     except Exception as e:
         print("ERROR:", e)
