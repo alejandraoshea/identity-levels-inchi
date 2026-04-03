@@ -286,6 +286,14 @@ class InChi:
         mol1 = InChi.neutralize_molecule(mol1)
         mol2 = InChi.neutralize_molecule(mol2)
 
+        tails1 = LipidAnalysis.extract_tails(mol1)
+        tails2 = LipidAnalysis.extract_tails(mol2)
+        sig1 = sorted((t["C"], t["DB"], t["O"]) for t in tails1)
+        sig2 = sorted((t["C"], t["DB"], t["O"]) for t in tails2)
+
+        if sig1 !=sig2:
+            return False
+
         # STEP 4: generate canonical tautomer
         taut1 = InChi.run_inchitrust(mol1, inchitrust_path)
         taut2 = InChi.run_inchitrust(mol2, inchitrust_path)
