@@ -141,6 +141,18 @@ function mapBackendResults(results) {
     };
 }
 
+const layerLabels = {
+    complete_identity: "Complete Identity",
+    isotope: "Isotope Independence",
+    salt: "Salt Independence",
+    charge: "Charge Independence",
+    double_bond: "Double Bond Independence",
+    stereo_cis_trans: "Cis/Trans Independence",
+    tautomer: "Tautomer Independence",
+    substituent: "Substituent Independence"
+};
+
+
 function updateLayers(results, isAdvanced = false) {
     document.querySelectorAll(".layer").forEach(layer => {
 
@@ -176,12 +188,12 @@ function updateLayers(results, isAdvanced = false) {
             layer.classList.add("match");
             layer.classList.remove("nomatch");
             badge.className = "badge green";
-            badge.innerText = "INDEPENDENT";
+            badge.innerText = "EQUAL";
         } else if (match === false) {
             layer.classList.add("nomatch");
             layer.classList.remove("match");
             badge.className = "badge red";
-            badge.innerText = "NOT INDEPENDENT";
+            badge.innerText = "DIFF";
         } else {
             layer.classList.remove("match", "nomatch");
             badge.className = "badge";
@@ -294,7 +306,9 @@ function populateDropdown(comparisons) {
             if (content.dataset.loaded) return;
 
             requestAnimationFrame(() => {
-                draw(comp.inchi_1, comp.inchi_2, `mol1-${index}`, `mol2-${index}`);
+                setTimeout(() => {
+                    draw(comp.inchi_1, comp.inchi_2, `mol1-${index}`, `mol2-${index}`);
+                }, 50);
             });
 
             const layersDiv = content.querySelector(`#layers-${index}`);
@@ -302,18 +316,21 @@ function populateDropdown(comparisons) {
             layersDiv.className = "layers-grid";
 
             const mapped = mapBackendResults(comp.results);
-            Object.entries(mapped).forEach(([key, val]) => {
-                const div = document.createElement("div");
-                div.className = "layer";
+            Object.keys(layerLabels).forEach(key => {
+            const val = mapped[key];
 
-                div.innerHTML = `
-                    <span>${key.replace(/_/g, " ")}</span>
-                    <span class="badge ${val ? "green" : "red"}">
-                        ${val ? "INDEPENDENT" : "NOT"}
-                    </span>
-                `;
-                layersDiv.appendChild(div);
-            });
+            const div = document.createElement("div");
+            div.className = "layer";
+
+            div.innerHTML = `
+                <span class="layer-label">${layerLabels[key]}</span>
+                <span class="badge ${val === true ? "green" : val === false ? "red" : ""}">
+                    ${val === true ? "EQUAL" : val === false ? "DIFF" : "N/A"}
+                </span>
+            `;
+
+            layersDiv.appendChild(div);
+        });
 
             content.dataset.loaded = true;
         };
