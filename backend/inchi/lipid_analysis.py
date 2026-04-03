@@ -1,6 +1,7 @@
 import requests
 from functools import lru_cache
 from rdkit import Chem
+from rdkit.Chem import MolToSmiles
 from collections import Counter
 
 class LipidAnalysis:
@@ -167,32 +168,33 @@ class LipidAnalysis:
 
         return ester, amide, ether
 
+    """
     @staticmethod
     def lipid_identity_levels(mol1, mol2):
-        """
         Returns lipid identity levels
         Level A: Cis/trans y resto idéntico
         Level B: Posicion cadenas
         Level C: Posición dobles enlaces y oxígeno
         Level D: Número total de carbonos, dobles enlaces y oxígenos
-        """
 
         # STEP A: remove cis/trans
-        mol1_A = Chem.Mol(mol1)
-        mol2_A = Chem.Mol(mol2)
+        mol1 = Chem.Mol(mol1)
+        mol2 = Chem.Mol(mol2)
 
-        LipidAnalysis.remove_cis_trans(mol1_A)
-        LipidAnalysis.remove_cis_trans(mol2_A)
+        LipidAnalysis.remove_cis_trans(mol1)
+        LipidAnalysis.remove_cis_trans(mol2)
 
-        tails1 = LipidAnalysis.extract_detailed_tails(mol1_A)
-        tails2 = LipidAnalysis.extract_detailed_tails(mol2_A)
+        tails1 = LipidAnalysis.extract_tails(mol1)
+        tails2 = LipidAnalysis.extract_tails(mol2)
 
-        LEVELA = tails1 == tails2
+        sig1 = MolToSmiles(mol1, canonical=True)
+        sig2 = MolToSmiles(mol2, canonical=True)
+        LEVELA = sig1 == sig2
         LEVELB = sorted(tails1) == sorted(tails2)
 
-        sig1 = sorted([(t["C"], t["DB"], t["O"]) for t in tails1])
-        sig2 = sorted([(t["C"], t["DB"], t["O"]) for t in tails2])
-        LEVELC = sig1 == sig2
+        comp1 = sorted([(t["C"], t["DB"], t["O"]) for t in tails1])
+        comp2 = sorted([(t["C"], t["DB"], t["O"]) for t in tails2])
+        LEVELC = comp1 == comp2
 
         total1 = (
             sum(t["C"] for t in tails1),
@@ -208,20 +210,18 @@ class LipidAnalysis:
 
         LEVELD = total1 == total2
 
-        if LEVELA:
-            return True
-
-        if LEVELB:
-            return True
-
-        if LEVELC:
-            return True
-
-        return LEVELD
+        return {
+            "A": LEVELA,
+            "B": LEVELB,
+            "C": LEVELC,
+            "D": LEVELD
+        }
+    """
 
     # STEP 1 remove cis/trans stereochemistry
     @staticmethod
     def remove_cis_trans(mol):
+        mol = Chem.Mol(mol)
         for bond in mol.GetBonds():
             if (
                 bond.GetBondType() == Chem.BondType.DOUBLE
@@ -230,6 +230,7 @@ class LipidAnalysis:
                     bond.SetStereo(Chem.BondStereo.STEREONONE) #rdkit recomputes stereochemistry 
                 
         Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        return mol
 
     # STEP 2 detect head atoms via SMARTS anchors
     @staticmethod
@@ -250,96 +251,108 @@ class LipidAnalysis:
     # STEP 3 extract tails via graph traversal
     @staticmethod
     def extract_tails(mol):
-        """
-        Extract lipid tails with detailed features:
-        - C: number of carbons
-        - DB: number of double bonds
-        - O: number of oxygens (oxidation)
-        """
-
+        visited_global = set()
         tails = []
-        visited = set()
 
-        def walk_chain(start_atom, coming_from):
-            stack = [start_atom]
-            visited_local = set()
+        def walk_chain(start_atom_idx):
+            visited = set()
+            stack = [(start_atom_idx, None)]
 
             carbons = 0
             double_bonds = 0
             oxygens = 0
+            db_positions = []
+            o_positions = []
+
+            position = 0
 
             while stack:
-                atom = stack.pop()
+                atom_idx, parent = stack.pop()
+
+                if atom_idx in visited:
+                    continue
+
+                visited.add(atom_idx)
+                atom = mol.GetAtomWithIdx(atom_idx)
+
+                if atom.GetAtomicNum() == 6:
+                    carbons += 1
+                    position += 1
+
+                    for bond in atom.GetBonds():
+                        neighbor = bond.GetOtherAtom(atom)
+                        neighbor_idx = neighbor.GetIdx()
+
+                        if neighbor_idx == parent:
+                            continue
+
+                        # continue carbon chain
+                        if neighbor.GetAtomicNum() == 6:
+                            if bond.GetBondType() == Chem.BondType.DOUBLE:
+                                double_bonds += 1
+                                db_positions.append(position)
+
+                            stack.append((neighbor_idx, atom_idx))
+
+                        # oxygen attached
+                        elif neighbor.GetAtomicNum() == 8:
+                            oxygens += 1
+                            o_positions.append(position)
+
+            if carbons >= 6:  # filter small fragments
+                return {
+                    "C": carbons,
+                    "DB": double_bonds,
+                    "O": oxygens,
+                    "DB_positions": tuple(sorted(db_positions)),
+                    "O_positions": tuple(sorted(o_positions)),
+                    "atoms": tuple(sorted(visited)), 
+                }
+
+            return None
+
+        # start from all carbons
+        for atom in mol.GetAtoms():
+            if atom.GetAtomicNum() == 6:
                 idx = atom.GetIdx()
 
-                if idx in visited_local:
+                if idx in visited_global:
                     continue
-                visited_local.add(idx)
 
-                if atom.GetSymbol() == "C":
-                    carbons += 1
-                elif atom.GetSymbol() == "O":
-                    oxygens += 1
+                tail = walk_chain(idx)
 
-                for bond in atom.GetBonds():
-                    nbr = bond.GetOtherAtom(atom)
+                if tail:
+                    tails.append(tail)
+                    visited_global.update(tail["atoms"])
 
-                    if nbr.GetIdx() == coming_from:
-                        continue
+        # deduplicate by atoms only
+        unique = []
+        seen_atoms = set()
 
-                    # count double bonds
-                    if bond.GetBondType() == Chem.rdchem.BondType.DOUBLE:
-                        if atom.GetSymbol() == "C" and nbr.GetSymbol() == "C":
-                            double_bonds += 1
+        for t in tails:
+            atom_key = t["atoms"]
 
-                    if nbr.GetSymbol() in ["C", "O"]:
-                        stack.append(nbr)
+            if atom_key not in seen_atoms:
+                seen_atoms.add(atom_key)
+                unique.append(t)
 
-            return {"C": carbons, "DB": double_bonds, "O": oxygens}
+        return unique
+    
+    def tail_sig_levelB(t):
+        return (
+            t["C"],
+            t["DB"],
+            t["O"],
+            t["DB_positions"],
+            t["O_positions"],
+        )
 
-        for bond in mol.GetBonds():
-            a1 = bond.GetBeginAtom()
-            a2 = bond.GetEndAtom()
-
-            # Ester
-            if bond.GetBondType() == Chem.rdchem.BondType.DOUBLE:
-                if {a1.GetSymbol(), a2.GetSymbol()} == {"C", "O"}:
-                    carbon = a1 if a1.GetSymbol() == "C" else a2
-
-                    for nbr in carbon.GetNeighbors():
-                        if nbr.GetSymbol() == "C":
-                            tail = walk_chain(nbr, carbon.GetIdx())
-                            if tail["C"] >= 8:
-                                tails.append(tail)
-
-            # Ether
-            if bond.GetBondType() == Chem.rdchem.BondType.SINGLE:
-                if a1.GetSymbol() == "O" and a2.GetSymbol() == "C":
-                    if a1.GetDegree() > 1:
-                        tail = walk_chain(a2, a1.GetIdx())
-                        if tail["C"] >= 8:
-                            tails.append(tail)
-
-                elif a2.GetSymbol() == "O" and a1.GetSymbol() == "C":
-                    if a2.GetDegree() > 1:
-                        tail = walk_chain(a1, a2.GetIdx())
-                        if tail["C"] >= 8:
-                            tails.append(tail)
-
-            # Amide
-            if bond.GetBondType() == Chem.rdchem.BondType.DOUBLE:
-                if {a1.GetSymbol(), a2.GetSymbol()} == {"C", "O"}:
-                    carbon = a1 if a1.GetSymbol() == "C" else a2
-
-                    for nbr in carbon.GetNeighbors():
-                        if nbr.GetSymbol() == "N":
-                            for nbr2 in nbr.GetNeighbors():
-                                if nbr2.GetSymbol() == "C":
-                                    tail = walk_chain(nbr2, nbr.GetIdx())
-                                    if tail["C"] >= 8:
-                                        tails.append(tail)
-
-        return tails
+    def tail_sig_levelC(t):
+        return (
+            t["C"],
+            t["DB"],
+            t["O"],
+        )
 
     # STEP 4 compute tail signature
     @staticmethod
@@ -380,7 +393,7 @@ class LipidAnalysis:
         if not head_atoms:
             return None
 
-        tails = LipidAnalysis.extract_tails(mol, head_atoms)
+        tails = LipidAnalysis.extract_tails(mol)
         tail_sigs = []
 
         for tail in tails:

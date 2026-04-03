@@ -1,7 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import rdFMCS
 from rdkit.Chem import rdmolops
-from rdkit.Chem import inchi
+from rdkit.Chem import inchi, MolToSmiles
 from rdkit.Chem.SaltRemover import SaltRemover
 from backend.inchi.inchi_parser import InChiParser
 from backend.inchi.inchi_layers_enum import InchiLayers
@@ -193,44 +193,51 @@ class InChi:
             sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
             return sig1 == sig2
 
-        # STEP 5: remove cis/trans
-        LipidAnalysis.remove_cis_trans(mol1)
-        LipidAnalysis.remove_cis_trans(mol2)
+        # LEVEL A: exact except cis/trans
+        mol1 = LipidAnalysis.remove_cis_trans(mol1)
+        mol2 = LipidAnalysis.remove_cis_trans(mol2)
 
-        # STEP 6: extract tails
+        sig1 = MolToSmiles(mol1, canonical=True, isomericSmiles=False)
+        sig2 = MolToSmiles(mol2, canonical=True, isomericSmiles=False)
+
+        if sig1 == sig2:
+            return True
+
         tails1 = LipidAnalysis.extract_tails(mol1)
         tails2 = LipidAnalysis.extract_tails(mol2)
 
-        # LEVEL A
-        sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
-        sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
+        if not tails1 or not tails2:
+            return False
 
-        LEVELA = sig1 == sig2
+        # LEVEL B: same chains, ignore position
+        sig1 = sorted(LipidAnalysis.tail_sig_levelB(t) for t in tails1)
+        sig2 = sorted(LipidAnalysis.tail_sig_levelB(t) for t in tails2)
 
-        # LEVEL B
-        LEVELB = sorted(tails1) == sorted(tails2)
+        if sig1 == sig2:
+            return True
 
-        # LEVEL C
-        sig1_C = sorted([(t["C"], t["DB"], t["O"]) for t in tails1])
-        sig2_C = sorted([(t["C"], t["DB"], t["O"]) for t in tails2])
-        LEVELC = sig1_C == sig2_C
+        # LEVEL C: ignore DB/O positions
+        sig1 = sorted(LipidAnalysis.tail_sig_levelC(t) for t in tails1)
+        sig2 = sorted(LipidAnalysis.tail_sig_levelC(t) for t in tails2)
 
-        # LEVEL D
+        if sig1 == sig2:
+            return True
+
+        # LEVEL D: global totals
         total1 = (
             sum(t["C"] for t in tails1),
             sum(t["DB"] for t in tails1),
-            sum(t["O"] for t in tails1),
         )
 
         total2 = (
             sum(t["C"] for t in tails2),
             sum(t["DB"] for t in tails2),
-            sum(t["O"] for t in tails2),
         )
 
-        LEVELD = total1 == total2
+        if total1 == total2:
+            return True
 
-        return LEVELA or LEVELB or LEVELC or LEVELD
+        return False
     
    
     def run_inchitrust(mol, inchitrust_path):
@@ -376,14 +383,19 @@ class InChi:
         mol2 = InChi.neutralize_molecule(mol2)
 
         #STEP 4: cis/trans 
-        LipidAnalysis.remove_cis_trans(mol1)
-        LipidAnalysis.remove_cis_trans(mol2)
+        mol1 = LipidAnalysis.remove_cis_trans(mol1)
+        mol2 = LipidAnalysis.remove_cis_trans(mol2)
 
         tails1 = LipidAnalysis.extract_tails(mol1)
         tails2 = LipidAnalysis.extract_tails(mol2)
         
         sig1 = sorted((t["C"], t["DB"], t["O"]) for t in tails1)
         sig2 = sorted((t["C"], t["DB"], t["O"]) for t in tails2)
+
+        tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
+
+        mol1 = tautomer_enumerator.Canonicalize(mol1)
+        mol2 = tautomer_enumerator.Canonicalize(mol2)
 
         #case 1: molecule is a lipid
         if (LipidAnalysis.is_lipid(inchi1, mol1) and
@@ -435,7 +447,6 @@ class InChi:
             )
 
         # CIS/TRANS
-        #TODO: if true then we apply it, if not, we dont
         if criteria["isomer_independence"]["cis_trans_independent_identity"]:
             results[InchiLayers.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE] = (
                 InChi.areEqualNoStereo(inchi1, inchi2)
@@ -455,6 +466,5 @@ class InChi:
             results[InchiLayers.SUBSTITUENT_POSITION_INDEPENDENCE] = (
                 InChi.areEqualSubstituentIndependent(inchi1, inchi2)
             )
-
 
         return results

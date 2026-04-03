@@ -9,7 +9,6 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command")
 
-    # compare command
     compare_parser = subparsers.add_parser(
         "compare",
         help="Compare two txt files containing InChIs"
