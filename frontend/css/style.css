@@ -191,6 +191,7 @@ button {
     font-weight:600; 
     cursor:pointer; 
     transition:0.2s;
+    margin-top: 8px;
 } 
 
 button:hover { 
@@ -447,15 +448,15 @@ button:hover {
 }
 
 .toast-success { 
-    background-color: #4caf50; 
+    background-color: #109614e0; 
 }
 
 .toast-error { 
-    background-color: #f44336; 
+    background-color: #bd2015cf; 
 }
 
 .toast-info { 
-    background-color: #2196f3; 
+    background-color: #165e99; 
 }
 
 @keyframes slideIn {

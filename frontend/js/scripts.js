@@ -375,3 +375,22 @@ document.querySelectorAll("textarea").forEach(textarea => {
     textarea.addEventListener("input", () => autoResizeTextarea(textarea));
     autoResizeTextarea(textarea);
 });
+
+function clearAdvancedSelection() {
+    document.querySelectorAll(".level-checkbox").forEach(cb => {
+        cb.checked = false;
+    });
+
+    document.querySelectorAll("#layers-advanced .layer").forEach(layer => {
+        layer.style.display = "block";
+        layer.classList.remove("match", "nomatch");
+
+        const badge = layer.querySelector(".badge");
+        if (badge) {
+            badge.innerText = "";
+            badge.className = "badge";
+        }
+    });
+
+    showToast("Selection cleared", "info");
+}
