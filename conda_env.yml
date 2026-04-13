@@ -1,14 +1,21 @@
 name: id-levels
+
 channels:
   - conda-forge
   - bioconda
+
 dependencies:
-  - python=3.12.11
+  - python=3.12
+  - rdkit=2025.9.1
+  - numpy
+  - pandas
+  - pyopenms>=3.4.0
+  - flask
+  - flask-cors
+  - requests
+  - python-dotenv
+  - pillow
   - pip
   - pip:
-    - pandas
-    - pyopenms>=3.4.0
-    - requests
-    - flask
-    - flask-cors
-    - dotenv
+      - py3Dmol
+      - pytest
