@@ -1,13 +1,27 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "identity-levels-inchi"
 version = "0.1.0"
-description = "Identity levels for InChI comparison"
+description = "InChI identity comparison across multiple chemical abstraction levels"
+authors = [
+    { name = "alejandraoshea", email = "alejandraosheafdez@gmail.com" }
+]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
+
+dependencies = [
+    "numpy>=1.23",
+    "pandas",
+    "requests",
+    "flask",
+    "flask-cors",
+    "python-dotenv"
+]
+
+keywords = ["chemistry", "inchi", "rdkit", "lipids", "cheminformatics"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
 
 [project.scripts]
 inchi = "backend.inchi.cli:main"
