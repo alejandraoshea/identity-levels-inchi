@@ -16,6 +16,7 @@ dependencies:
   - python-dotenv
   - pillow
   - pip
+  - rdkit
   - pip:
       - py3Dmol
       - pytest
