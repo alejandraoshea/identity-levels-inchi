@@ -413,11 +413,11 @@ class LipidAnalysis:
         if not head_atoms:
             return None
 
-        tails = LipidAnalysis.extract_tails(mol, head_atoms)
+        tails = LipidAnalysis.extract_tails(mol)
         tail_sigs = []
 
         for tail in tails:
-            sig = LipidAnalysis.tail_signature(mol, tail)
+            sig = (tail["C"], tail["DB"])
             if sig:
                 tail_sigs.append(sig)
 

@@ -18,48 +18,59 @@ class InChI:
 
     def mol_from_inchi(inchi: str):
         try:
-            mol = Chem.MolFromInchi(inchi.strip())
+            mol = Chem.inchi.MolFromInchi(inchi.strip())
+            if mol is not None:
+                return mol
+            
+            mol = Chem.inchi.MolFromInchi(inchi.strip(), sanitize=False)
             if mol is None:
-                raise ValueError(f"Invalid InChI: {inchi}")
+                raise ValueError(f"InChI conversion failed: Internal RDKit/InChI parser rejection")
             return mol
         except Exception as e:
             print(f"RDKit conversion failed for InChI: {inchi}\nError: {e}")
             return None
 
 
+    def areEqualNoIsotopes(inchi1: str, inchi2: str) -> bool:
+        inchi1_isotopes = InChIParser.removeIsotopicLayers(inchi1)
+        inchi2_isotopes = InChIParser.removeIsotopicLayers(inchi2)
+        return inchi1_isotopes == inchi2_isotopes
+    
     def main_fragment(mol):
         try:
             frags = Chem.GetMolFrags(mol, asMols=True)
-            # pick largest fragment (most atoms)
             main = max(frags, key=lambda m: m.GetNumAtoms())
             Chem.SanitizeMol(main)
             Chem.AssignStereochemistry(main, cleanIt=True, force=True)
             return main
         except Exception:
             return mol
-    
-    def areEqualNoIsotopes(inchi1: str, inchi2: str) -> bool:
-        inchi1_isotopes = InChIParser.removeIsotopicLayers(inchi1)
-        inchi2_isotopes = InChIParser.removeIsotopicLayers(inchi2)
-        return inchi1_isotopes == inchi2_isotopes
-    
+
     def areEqualDisolvedSalts(inchi1: str, inchi2: str) -> bool:
+        inchi1 = InChIParser.removeIsotopicLayers(inchi1)
+        inchi2 = InChIParser.removeIsotopicLayers(inchi2)
+
         mol1 = InChI.mol_from_inchi(inchi1)
         mol2 = InChI.mol_from_inchi(inchi2)
 
-        if not mol1 or not mol2:
-            return False    
+        if mol1 is None or mol2 is None:
+            return False
 
-        main1 = InChI.main_fragment(mol1)
-        main2 = InChI.main_fragment(mol2)
+        remover = SaltRemover()
+
+        mol1_clean = remover.StripMol(mol1, dontRemoveEverything=True)
+        mol2_clean = remover.StripMol(mol2, dontRemoveEverything=True)
+
+        mol1_main = InChI.main_fragment(mol1_clean)
+        mol2_main = InChI.main_fragment(mol2_clean)
 
         try:
-            inchi_main1 = inchi.MolToInchi(main1)
-            inchi_main2 = inchi.MolToInchi(main2)
+            inchi1_final = inchi.MolToInchi(mol1_main)
+            inchi2_final = inchi.MolToInchi(mol2_main)
         except Exception:
             return False
 
-        return inchi_main1 == inchi_main2
+        return inchi1_final == inchi2_final
     
     #helper method: detect negative charge to neutralize the mol
     def has_negative_charge(inchi: str) -> bool:
@@ -155,7 +166,6 @@ class InChI:
 
         # CASE 3: q+N → we leave it
         return inchi1 == inchi2
-
  
     def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
         inchi1_no_stereo = InChIParser.removeStereoLayers(inchi1)
