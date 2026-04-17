@@ -216,7 +216,7 @@ button:hover {
     flex-direction:column; 
     overflow:hidden; 
     flex: 1;
-    min-height: 0;
+    min-height: 200px;
 } 
 
 .center .molecule-card {
@@ -272,11 +272,12 @@ button:hover {
 }
 
 .layers-grid {
-    display: grid !important;  
+    display: flex grid !important;  
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(2, auto); 
     gap: 10px;
     margin-top: 10px;
+    flex-wrap: wrap;
 }
 
 .layer {
@@ -506,4 +507,63 @@ button:hover {
     0% { opacity: 1; }
     50% { opacity: 0.4; }
     100% { opacity: 1; }
+}
+
+.mol-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 14px;
+    color: #888;
+}
+
+.scroll-container {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.comparison-card {
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: white;
+}
+
+#mode-select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #dcdcdc;
+    background-color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+#mode-select:hover {
+    border-color: #999;
+}
+
+#mode-select:focus {
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
+}
+
+#mode-select option {
+    padding: 10px;
+}
+
+.arrow {
+    margin-right: 8px;
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 11px;
 }

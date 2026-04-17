@@ -14,6 +14,12 @@ function updateLayerVisibility(mode) {
 }
 
 function draw(inchi1, inchi2, id1 = "mol1", id2 = "mol2") {
+    const el1 = document.getElementById(id1);
+    const el2 = document.getElementById(id2);
+
+    if (el1) el1.innerHTML = "<div class='mol-loading'>Loading 3D...</div>";
+    if (el2) el2.innerHTML = "<div class='mol-loading'>Loading 3D...</div>";
+
     visualizeFromInchi(id1, inchi1);
     visualizeFromInchi(id2, inchi2);
 }
@@ -26,8 +32,6 @@ async function visualizeFromInchi(containerId, inchi) {
         return;
     }
 
-    element.innerHTML = "Loading...";
-
     try {
         const res = await fetch("http://127.0.0.1:5000/api/generate_3d", {
             method: "POST",
@@ -36,8 +40,9 @@ async function visualizeFromInchi(containerId, inchi) {
         });
 
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error);
+
+        element.innerHTML = "";
 
         const viewer = $3Dmol.createViewer(element, { backgroundColor: 'white' });
         viewer.addModel(data.sdf, "sdf");
@@ -49,7 +54,7 @@ async function visualizeFromInchi(containerId, inchi) {
         console.error("3D failed → fallback 2D:", e);
 
         try {
-            const mol = RDKit.get_mol(inchi); 
+            const mol = RDKit.get_mol(inchi);
             element.innerHTML = mol ? mol.get_svg() : "Invalid InChI";
         } catch {
             element.innerHTML = "Invalid InChI";
@@ -71,6 +76,7 @@ async function compare(isAdvanced = false) {
         return;
     }
 
+    updateLayers({}, isAdvanced);
     setLoadingState(true);
 
     let url = "http://127.0.0.1:5000/api/compare_inchis";
@@ -129,11 +135,10 @@ function setLoadingState(isLoading) {
         }
 
         if (isLoading) {
-            badge.dataset.previous = badge.innerText;
+            layer.classList.remove("match", "nomatch");
 
+            badge.className = "badge loading";
             badge.innerText = "LOADING...";
-            badge.classList.remove("green", "red");
-            badge.classList.add("loading");
         } else {
             badge.classList.remove("loading");
         }
@@ -147,14 +152,14 @@ function setLoadingState(isLoading) {
 
 function mapBackendResults(results) {
     return {
-        complete_identity: results.COMPLETE_IDENTITY,
-        isotope: results.ISOTOPIC_INDEPENDENCE,
-        salt: results.SALTS_INDEPENDENCE,
-        charge: results.CHARGES_INDEPENDENCE,
-        stereo_cis_trans: results.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE,
-        double_bond: results.DOUBLE_BONDS_INDEPENDENCE,
-        tautomer: results.TAUTOMER_INDEPENDENCE,
-        substituent: results.SUBSTITUENT_POSITION_INDEPENDENCE
+        complete_identity: results.COMPLETE_IDENTITY ?? null,
+        isotope: results.ISOTOPIC_INDEPENDENCE ?? null,
+        salt: results.SALTS_INDEPENDENCE ?? null,
+        charge: results.CHARGES_INDEPENDENCE ?? null,
+        stereo_cis_trans: results.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE ?? null,
+        double_bond: results.DOUBLE_BONDS_INDEPENDENCE ?? null,
+        tautomer: results.TAUTOMER_INDEPENDENCE ?? null,
+        substituent: results.SUBSTITUENT_POSITION_INDEPENDENCE ?? null
     };
 }
 
@@ -260,28 +265,29 @@ if (file2Input) {
     });
 }
 
-const compareBtn = document.getElementById("compare-files-btn");
-if (compareBtn) {
-    compareBtn.addEventListener("click", async () => {
-        if (!file1Data.length || !file2Data.length) {
-            showToast("Upload both files", "error");
-            return;
-        }
+document.getElementById("compare-files-btn").addEventListener("click", async () => {
 
-        const res = await fetch("http://127.0.0.1:5000/api/compare_files", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                list1: file1Data,
-                list2: file2Data
-            })
-        });
+    const compareMode = document.getElementById("mode-select").value; 
 
-        const data = await res.json();
-        comparisonsData = data.comparisons;
-        populateDropdown(comparisonsData);
+    const res = await fetch("http://127.0.0.1:5000/api/compare_files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            list1: file1Data,
+            list2: file2Data,
+            mode: compareMode
+        })
     });
-}
+
+    const data = await res.json();
+    comparisonsData = data.comparisons;
+
+    if (compareMode === "pairwise") {
+        renderPairwise(comparisonsData);
+    } else {
+        populateDropdown(comparisonsData);
+    }
+});
 
 async function readFile(file) {
     const text = await file.text();
@@ -292,71 +298,146 @@ function populateDropdown(comparisons) {
     const container = document.getElementById("file-results-container");
     container.innerHTML = "";
 
-    comparisons.forEach((comp, index) => {
-        const wrapper = document.createElement("div");
-        wrapper.className = "file-item";
+    const grouped = groupByInchi1(comparisons);
+
+    Object.keys(grouped).forEach((inchi1, groupIndex) => {
+        const item = document.createElement("div");
+        item.className = "file-item";
 
         const header = document.createElement("div");
         header.className = "file-header";
-        header.textContent = `${index + 1}. InChI 1 vs InChI 2`;
+
+        header.innerHTML = `
+            <span class="arrow">▶</span>
+            <span class="inchi-text">${inchi1}</span>
+        `;
 
         const content = document.createElement("div");
-        content.className = "file-content";
         content.style.display = "none";
+        content.style.padding = "10px";
 
-        content.innerHTML = `
+        header.onclick = () => {
+            const isOpen = item.classList.contains("open");
+
+            item.classList.toggle("open");
+            content.style.display = isOpen ? "none" : "block";
+
+            const arrow = header.querySelector(".arrow");
+            arrow.style.transform = isOpen ? "rotate(0deg)" : "rotate(90deg)";
+        };
+
+        grouped[inchi1].forEach((comp, index) => {
+
+            const card = document.createElement("div");
+            card.className = "comparison-card";
+
+            card.innerHTML = `
+                <div class="molecule-row">
+                    <div class="molecule-card">
+                        <div class="molecule-header inchi-text">${comp.inchi_1}</div>
+                        <div id="mol1-${groupIndex}-${index}" class="molecule"></div>
+                    </div>
+
+                    <div class="molecule-card">
+                        <div class="molecule-header inchi-text">${comp.inchi_2}</div>
+                        <div id="mol2-${groupIndex}-${index}" class="molecule"></div>
+                    </div>
+                </div>
+
+                <div id="layers-${groupIndex}-${index}" class="layers-grid"></div>
+            `;
+
+            content.appendChild(card);
+
+            setTimeout(() => {
+                draw(
+                    comp.inchi_1,
+                    comp.inchi_2,
+                    `mol1-${groupIndex}-${index}`,
+                    `mol2-${groupIndex}-${index}`
+                );
+            }, 0);
+
+            const layersDiv = card.querySelector(`#layers-${groupIndex}-${index}`);
+            const mapped = mapBackendResults(comp.results || comp.differences || {});
+
+            Object.keys(layerLabels).forEach(key => {
+                const val = mapped[key];
+                if (val === null) return;
+
+                const div = document.createElement("div");
+                div.className = "layer";
+
+                div.innerHTML = `
+                    <span class="layer-label">${layerLabels[key]}</span>
+                    <span class="badge red">DIFF</span>
+                `;
+
+                layersDiv.appendChild(div);
+            });
+
+            if (layersDiv.children.length === 0) {
+                layersDiv.innerHTML = `<div class="layer">No differences</div>`;
+            }
+        });
+
+        item.appendChild(header);
+        item.appendChild(content);
+        container.appendChild(item);
+    });
+}
+
+function renderPairwise(comparisons) {
+    const container = document.getElementById("file-results-container");
+    container.innerHTML = "";
+
+    comparisons.forEach((comp, index) => {
+
+        const card = document.createElement("div");
+        card.className = "comparison-card";
+
+        card.innerHTML = `
             <div class="molecule-row">
                 <div class="molecule-card">
                     <div class="molecule-header inchi-text">${comp.inchi_1}</div>
                     <div id="mol1-${index}" class="molecule"></div>
                 </div>
+
                 <div class="molecule-card">
                     <div class="molecule-header inchi-text">${comp.inchi_2}</div>
                     <div id="mol2-${index}" class="molecule"></div>
                 </div>
             </div>
+
             <div id="layers-${index}" class="layers-grid"></div>
         `;
 
-        header.onclick = () => {
-            content.style.display = content.style.display === "none" ? "block" : "none";
-            if (content.dataset.loaded) return;
+        container.appendChild(card);
 
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    draw(comp.inchi_1, comp.inchi_2, `mol1-${index}`, `mol2-${index}`);
-                }, 50);
-            });
+        draw(comp.inchi_1, comp.inchi_2, `mol1-${index}`, `mol2-${index}`);
 
-            const layersDiv = content.querySelector(`#layers-${index}`);
-            layersDiv.innerHTML = "";
-            layersDiv.className = "layers-grid";
+        const layersDiv = card.querySelector(`#layers-${index}`);
+        const mapped = mapBackendResults(comp.results || comp.differences || {});
 
-            const mapped = mapBackendResults(comp.results);
-            Object.keys(layerLabels).forEach(key => {
+        Object.keys(layerLabels).forEach(key => {
             const val = mapped[key];
+
+            if (val === null) return; 
 
             const div = document.createElement("div");
             div.className = "layer";
 
             div.innerHTML = `
                 <span class="layer-label">${layerLabels[key]}</span>
-                <span class="badge ${val === true ? "green" : val === false ? "red" : ""}">
-                    ${val === true ? "EQUAL" : val === false ? "DIFF" : "N/A"}
-                </span>
+                <span class="badge red">DIFF</span>
             `;
 
             layersDiv.appendChild(div);
         });
-
-            content.dataset.loaded = true;
-        };
-
-        wrapper.appendChild(header);
-        wrapper.appendChild(content);
-        container.appendChild(wrapper);
     });
 }
+
+
 
 function renderComparison(comp) {
     const { inchi_1, inchi_2, results } = comp;
@@ -394,3 +475,17 @@ function clearAdvancedSelection() {
 
     showToast("Selection cleared", "info");
 }
+
+function groupByInchi1(comparisons) {
+    const grouped = {};
+
+    comparisons.forEach(comp => {
+        if (!grouped[comp.inchi_1]) {
+            grouped[comp.inchi_1] = [];
+        }
+        grouped[comp.inchi_1].push(comp);
+    });
+
+    return grouped;
+}
+
