@@ -7,6 +7,8 @@ from rdkit.Chem.SaltRemover import SaltRemover
 from backend.inchi.inchi_parser import InChIParser
 from backend.inchi.inchi_layers_enum import InchiLayers
 from backend.inchi.lipid_analysis import LipidAnalysis
+from backend.inchi.lipid_structure_detector import LipidHeadValidator
+from backend.inchi.lipid_tail_extraction import TailExtractor
 import subprocess, os
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from collections import Counter
@@ -172,6 +174,20 @@ class InChI:
         inchi2_no_stereo = InChIParser.removeStereoLayers(inchi2)
         return inchi1_no_stereo == inchi2_no_stereo
  
+    # STEP 1 remove cis/trans stereochemistry
+    @staticmethod
+    def remove_cis_trans(mol):
+        mol = Chem.Mol(mol)
+        for bond in mol.GetBonds():
+            if (
+                bond.GetBondType() == Chem.BondType.DOUBLE
+                and bond.GetBeginAtom().GetAtomicNum() == 6
+                and bond.GetEndAtom().GetAtomicNum() == 6):
+                    bond.SetStereo(Chem.BondStereo.STEREONONE) #rdkit recomputes stereochemistry 
+                
+        Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
+        return mol
+    
     #stereochemical layer - sublayer
     def areEqualNoPositionDoubleBond(inchi1: str, inchi2: str) -> bool:
         if inchi1 == inchi2:
@@ -205,8 +221,8 @@ class InChI:
             return sig1 == sig2
 
         # LEVEL A: exact except cis/trans
-        mol1 = LipidAnalysis.remove_cis_trans(mol1)
-        mol2 = LipidAnalysis.remove_cis_trans(mol2)
+        mol1 = InChI.remove_cis_trans(mol1)
+        mol2 = InChI.remove_cis_trans(mol2)
 
         sig1 = MolToSmiles(mol1, canonical=True, isomericSmiles=False)
         sig2 = MolToSmiles(mol2, canonical=True, isomericSmiles=False)
@@ -214,8 +230,8 @@ class InChI:
         if sig1 == sig2:
             return True
 
-        tails1 = LipidAnalysis.extract_tails(mol1)
-        tails2 = LipidAnalysis.extract_tails(mol2)
+        tails1 = TailExtractor.extract_tails(mol1)
+        tails2 = TailExtractor.extract_tails(mol2)
 
         if not tails1 or not tails2:
             return False
@@ -372,7 +388,7 @@ class InChI:
         scaffold, subs = InChI.get_substituent_signatures(mol)
         return (scaffold, subs)
     
-    
+
     @staticmethod
     def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
         # STEP 1: remove isotopes
@@ -394,21 +410,39 @@ class InChI:
         mol2 = InChI.neutralize_molecule(mol2)
 
         # STEP 4: remove cis/trans
-        mol1 = LipidAnalysis.remove_cis_trans(mol1)
-        mol2 = LipidAnalysis.remove_cis_trans(mol2)
+        mol1 = InChI.remove_cis_trans(mol1)
+        mol2 = InChI.remove_cis_trans(mol2)
 
         # STEP 5: canonicalize tautomers
         tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
         mol1 = tautomer_enumerator.Canonicalize(mol1)
         mol2 = tautomer_enumerator.Canonicalize(mol2)
 
+        # STEP 6: lipid detection
         is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1, use_classyfire=False)
         is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2, use_classyfire=False)
 
+        # CASE 1: both are lipids
         if is_lipid1 and is_lipid2:
-            tails1 = LipidAnalysis.extract_tails(mol1)
-            tails2 = LipidAnalysis.extract_tails(mol2)
+            # validate FA positions using SMARTS
+            validator = LipidHeadValidator()
+            
+            valid1 = validator.matches_any_valid_head(mol1)
+            valid2 = validator.matches_any_valid_head(mol2)
+            
+            # if either molecule has FA in a wrong position : NOT EQUAL
+            if not (valid1 and valid2):
+                print("Headgroup validation failed → fallback to tail comparison")
+            
+            # if only one is valid, they can't be equal
+            if valid1 != valid2:
+                return False
+            
+            # both have valid headgroups: continue with tail comparison
+            tails1 = TailExtractor.extract_tails(mol1)
+            tails2 = TailExtractor.extract_tails(mol2)
 
+            # Level C: Compare tail signatures (C, DB, O counts)
             sigs1 = [LipidAnalysis.tail_sig_levelC(t) for t in tails1]
             sigs2 = [LipidAnalysis.tail_sig_levelC(t) for t in tails2]
 
@@ -430,12 +464,13 @@ class InChI:
             if total1 == total2:
                 return True
 
+            # atom count fallback
             if LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2):
                 return True
 
             return False
-        
-        # CASE 2: not lipids - use Murcko scaffold substituent comparison
+
+        # CASE 2: not lipids (Use Murcko scaffold)
         sig1 = InChI.substituent_position_independent_signature(inchi1)
         sig2 = InChI.substituent_position_independent_signature(inchi2)
 
