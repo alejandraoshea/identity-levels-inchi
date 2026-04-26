@@ -16,27 +16,27 @@ def compare_pair(inchi1, inchi2, config):
 def compare_text_files(list1, list2, config, mode="pairwise"):
     results = []
 
-    def extract_false_layers(comparison):
+    def extract_true_layers(comparison):
         return {
             k.name: False
             for k, v in comparison.items()
-            if not bool(v)
+            if bool(v)
         }
 
     if mode == "pairwise":
         for i1, i2 in zip(list1, list2):
             comparison = InChI.get_ids(i1, i2, config)
 
-            false_layers = extract_false_layers(comparison)
+            true_layers = extract_true_layers(comparison)
 
             # skip if identical
-            if not false_layers:
+            if not true_layers:
                 continue
 
             results.append({
                 "inchi_1": i1,
                 "inchi_2": i2,
-                "differences": false_layers
+                "differences": true_layers
             })
 
     elif mode == "cross":
@@ -44,15 +44,15 @@ def compare_text_files(list1, list2, config, mode="pairwise"):
             for i2 in list2:
                 comparison = InChI.get_ids(i1, i2, config)
 
-                false_layers = extract_false_layers(comparison)
+                true_layers = extract_true_layers(comparison)
 
-                if not false_layers:
+                if not true_layers:
                     continue
 
                 results.append({
                     "inchi_1": i1,
                     "inchi_2": i2,
-                    "differences": false_layers
+                    "differences": true_layers
                 })
 
     return {"comparisons": results}
