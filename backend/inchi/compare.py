@@ -30,7 +30,7 @@ def extract_matches(comparison):
     }
 
 
-def compare_text_files(list1, list2, config, mode="pairwise"):
+def compare_text_files(list1, list2, config, mode="pairwise", only_equal=False):
     results = []
 
     def process(i1, i2):
@@ -62,7 +62,7 @@ def compare_text_files(list1, list2, config, mode="pairwise"):
     return {"comparisons": results}
 
 
-def compare_mgf_files(file1, file2, config):
+def compare_mgf_files(file1, file2, config, only_equal=False):
     entries1 = MgfParser.parse_mgf(file1)
     entries2 = MgfParser.parse_mgf(file2)
 

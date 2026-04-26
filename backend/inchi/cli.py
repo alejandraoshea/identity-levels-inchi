@@ -26,7 +26,7 @@ def main():
     compare_parser.add_argument("--config", default=None)
 
     compare_parser.add_argument(
-        "--only-differences",
+        "--only-equal",
         action="store_true"
     )
 
@@ -63,7 +63,7 @@ def main():
     mgf_parser.add_argument("--config", default=None)
 
     mgf_parser.add_argument(
-        "--only-differences",
+        "--only-equal",
         action="store_true"
     )
 
@@ -78,7 +78,8 @@ def main():
             args.file1,
             args.file2,
             config,
-            mode=args.mode
+            mode=args.mode,
+            only_equal=args.only_equal
         )
 
         if args.output_file:
@@ -123,7 +124,8 @@ def main():
         result = compare_mgf_files(
             args.file1,
             args.file2,
-            config
+            config,
+            only_equal=args.only_equal
         )
 
         print(json.dumps(result, indent=2))
