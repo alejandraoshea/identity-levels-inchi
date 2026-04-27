@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from backend.inchi.determine_levels_id import InChI
-from backend.inchi.mgf_parser import MgfParser
+from backend.parsers.mgf_parser import MgfParser
 
 
 def compare_pair(inchi1, inchi2, config):
@@ -14,7 +14,7 @@ def compare_pair(inchi1, inchi2, config):
     }
 
 
-def _read_file_lines(file_path):
+def read_file_lines(file_path):
     return [
         line.strip()
         for line in Path(file_path).read_text().splitlines()

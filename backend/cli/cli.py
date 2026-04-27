@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from backend.inchi.compare import compare_text_files,compare_pair,compare_mgf_files
+from backend.inchi.compare import compare_text_files,compare_pair,compare_mgf_files, read_file_lines
 from backend.inchi.config_loader import load_config,build_config_from_levels,apply_inchitrust
 
 def main():
@@ -78,13 +78,10 @@ def main():
         config = load_config(args.config)
         config = apply_inchitrust(config, args.inchitrust)
 
-        result = compare_text_files(
-            args.file1,
-            args.file2,
-            config,
-            mode=args.mode,
-            only_equal=args.only_equal
-        )
+        list1 = read_file_lines(args.file1)
+        list2 = read_file_lines(args.file2)
+
+        result = compare_text_files(list1, list2, config, mode=args.mode, only_equal=args.only_equal)
 
         if args.output_file:
             with open(args.output_file, "w") as f:

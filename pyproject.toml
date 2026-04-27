@@ -24,7 +24,18 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project.scripts]
-inchi = "backend.inchi.cli:main"
+inchi = "backend.cli.cli:main"
 
-[tool.setuptools.packages.find]
-where = ["."]
+[tool.setuptools]
+packages = [
+    "backend",
+    "backend.cli",
+    "backend.configs",
+    "backend.inchi",
+    "backend.lipid",
+    "backend.parsers",
+    "backend.routes",
+    "backend.input",
+    "backend.output",
+    "backend.tests"
+]

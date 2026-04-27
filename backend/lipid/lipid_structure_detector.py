@@ -251,30 +251,30 @@ class LipidHeadValidator:
         
         return result
 
-def is_valid_lipid_structure(mol: Chem.Mol) -> bool:
-    """
-    Quick check: Does this molecule have a valid lipid headgroup
-    with FA attached at the CORRECT position?
-    
-    Args:
-        mol: RDKit molecule
-    
-    Returns:
-        True if valid lipid structure
-    """
-    validator = LipidHeadValidator()
-    return validator.matches_any_valid_head(mol)
+    def is_valid_lipid_structure(mol: Chem.Mol) -> bool:
+        """
+        Quick check: Does this molecule have a valid lipid headgroup
+        with FA attached at the CORRECT position?
+        
+        Args:
+            mol: RDKit molecule
+        
+        Returns:
+            True if valid lipid structure
+        """
+        validator = LipidHeadValidator()
+        return validator.matches_any_valid_head(mol)
 
 
-def get_lipid_class(mol: Chem.Mol) -> Optional[str]:
-    """
-    Identify the lipid class of a molecule.
-    
-    Args:
-        mol: RDKit molecule
-    
-    Returns:
-        Lipid class name or None
-    """
-    validator = LipidHeadValidator()
-    return validator.identify_lipid_class(mol)
+    def get_lipid_class(mol: Chem.Mol) -> Optional[str]:
+        """
+        Identify the lipid class of a molecule.
+        
+        Args:
+            mol: RDKit molecule
+        
+        Returns:
+            Lipid class name or None
+        """
+        validator = LipidHeadValidator()
+        return validator.identify_lipid_class(mol)

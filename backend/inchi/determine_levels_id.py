@@ -6,9 +6,9 @@ from rdkit.Chem import inchi, MolToSmiles
 from rdkit.Chem.SaltRemover import SaltRemover
 from backend.inchi.inchi_parser import InChIParser
 from backend.inchi.inchi_layers_enum import InchiLayers
-from backend.inchi.lipid_analysis import LipidAnalysis
-from backend.inchi.lipid_structure_detector import LipidHeadValidator
-from backend.inchi.lipid_tail_extraction import TailExtractor
+from backend.lipid.lipid_analysis import LipidAnalysis
+from backend.lipid.lipid_structure_detector import LipidHeadValidator
+from backend.lipid.lipid_tail_extraction import TailExtractor
 import subprocess, os
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from collections import Counter
@@ -142,14 +142,14 @@ class InChI:
         p1_plus, p1_minus, q1_plus, q1_minus = InChI.get_charge_info(inchi1)
         p2_plus, p2_minus, q2_plus, q2_minus = InChI.get_charge_info(inchi2)
 
-        # CASE 1: p+N → remove p layer
+        # CASE 1: p+N - remove p layer
         if (p1_plus or p2_plus) and not (p1_minus or p2_minus or q1_minus or q2_minus):
             inchi1 = InChI.remove_only_p_layer(inchi1)
             inchi2 = InChI.remove_only_p_layer(inchi2)
 
             return inchi1 == inchi2
 
-        # CASE 2: q-N or p-N → neutralize molecules
+        # CASE 2: q-N or p-N - neutralize molecules
         if p1_minus or p2_minus or q1_minus or q2_minus:
 
             mol1 = InChI.mol_from_inchi(inchi1)
@@ -166,7 +166,7 @@ class InChI:
 
             return sig1 == sig2
 
-        # CASE 3: q+N → we leave it
+        # CASE 3: q+N - we leave it
         return inchi1 == inchi2
  
     def areEqualNoStereo(inchi1: str, inchi2: str) -> bool:
@@ -338,7 +338,7 @@ class InChI:
             )
             scaffold_atoms = {a.GetIdx() for a in scaffold.GetAtoms()}
         else:
-            # no scaffold → treat whole molecule as substituent space
+            # no scaffold - treat whole molecule as substituent space
             scaffold_smiles = "NO_SCAFFOLD"
             scaffold_atoms = set()
 
@@ -432,7 +432,8 @@ class InChI:
             
             # if either molecule has FA in a wrong position : NOT EQUAL
             if not (valid1 and valid2):
-                print("Headgroup validation failed → fallback to tail comparison")
+                #print(f"Headgroup validation failed - fallback to tail comparison")
+                pass
             
             # if only one is valid, they can't be equal
             if valid1 != valid2:
