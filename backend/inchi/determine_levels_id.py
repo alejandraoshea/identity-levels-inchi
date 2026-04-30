@@ -388,7 +388,6 @@ class InChI:
         scaffold, subs = InChI.get_substituent_signatures(mol)
         return (scaffold, subs)
     
-
     @staticmethod
     def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
         # STEP 1: remove isotopes
@@ -424,26 +423,23 @@ class InChI:
 
         # CASE 1: both are lipids
         if is_lipid1 and is_lipid2:
-            # validate FA positions using SMARTS
             validator = LipidHeadValidator()
-            
-            valid1 = validator.matches_any_valid_head(mol1)
-            valid2 = validator.matches_any_valid_head(mol2)
-            
-            # if either molecule has FA in a wrong position : NOT EQUAL
-            if not (valid1 and valid2):
-                #print(f"Headgroup validation failed - fallback to tail comparison")
-                pass
-            
-            # if only one is valid, they can't be equal
-            if valid1 != valid2:
+
+            class1 = validator.identify_lipid_class(mol1)
+            class2 = validator.identify_lipid_class(mol2)
+
+            if class1 and class2:
+                if class1 != class2:
+                    return False
+
+            elif class1 or class2:
                 return False
-            
-            # both have valid headgroups: continue with tail comparison
+
+            # Tail comparison
             tails1 = TailExtractor.extract_tails(mol1)
             tails2 = TailExtractor.extract_tails(mol2)
 
-            # Level C: Compare tail signatures (C, DB, O counts)
+            # Level C: Compare tail signatures
             sigs1 = [LipidAnalysis.tail_sig_levelC(t) for t in tails1]
             sigs2 = [LipidAnalysis.tail_sig_levelC(t) for t in tails2]
 
@@ -465,18 +461,18 @@ class InChI:
             if total1 == total2:
                 return True
 
-            # atom count fallback
-            if LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2):
-                return True
+            # Atom count fallback
+            if len(tails1) == len(tails2):
+                if LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2):
+                    return True
 
             return False
 
-        # CASE 2: not lipids (Use Murcko scaffold)
+        # CASE 2: not lipids
         sig1 = InChI.substituent_position_independent_signature(inchi1)
         sig2 = InChI.substituent_position_independent_signature(inchi2)
 
         return sig1 == sig2
-
 
     @staticmethod
     def get_ids(inchi1: str, inchi2: str, config: dict) -> dict:
