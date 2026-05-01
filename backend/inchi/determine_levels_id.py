@@ -6,8 +6,7 @@ from rdkit.Chem import inchi, MolToSmiles
 from rdkit.Chem.SaltRemover import SaltRemover
 from src.backend.inchi.inchi_parser import InChIParser
 from src.backend.inchi.inchi_layers_enum import InchiLayers
-from src.backend.lipid.lipid_analysis import LipidAnalysis
-from src.backend.lipid.lipid_analysis import LipidHeadValidator
+from src.backend.lipid.lipid_analysis import LipidAnalysis, LipidHeadValidator
 from src.backend.lipid.lipid_tail_extraction import TailExtractor
 import subprocess, os
 from rdkit.Chem.Scaffolds import MurckoScaffold
@@ -388,7 +387,6 @@ class InChI:
         scaffold, subs = InChI.get_substituent_signatures(mol)
         return (scaffold, subs)
     
-
     @staticmethod
     def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
         # STEP 1: remove isotopes
@@ -422,21 +420,29 @@ class InChI:
         is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1, use_classyfire=False)
         is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2, use_classyfire=False)
 
-        if is_lipid1 != is_lipid2:
-            return False
-
         # CASE 1: both are lipids
-        if is_lipid1 and is_lipid2:            
+        if is_lipid1 and is_lipid2:
+            validator = LipidHeadValidator()
+
+            class1 = validator.identify_lipid_class(mol1)
+            class2 = validator.identify_lipid_class(mol2)
+
+            if class1 and class2:
+                if class1 != class2:
+                    return False
+
+            elif class1 or class2:
+                return False
+
+            # Tail comparison
             tails1 = TailExtractor.extract_tails(mol1)
             tails2 = TailExtractor.extract_tails(mol2)
 
-            if not tails1 or not tails2:
-                return LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2)
+            # Level C: Compare tail signatures
+            sigs1 = [LipidAnalysis.tail_sig_levelC(t) for t in tails1]
+            sigs2 = [LipidAnalysis.tail_sig_levelC(t) for t in tails2]
 
-            sigs1 = sorted([LipidAnalysis.tail_sig_levelC(t) for t in tails1])
-            sigs2 = sorted([LipidAnalysis.tail_sig_levelC(t) for t in tails2])
-
-            if sigs1 == sigs2:
+            if Counter(sigs1) == Counter(sigs2):
                 return True
 
             total1 = (
@@ -461,7 +467,7 @@ class InChI:
 
             return False
 
-        # CASE 2: both are not lipids
+        # CASE 2: not lipids
         sig1 = InChI.substituent_position_independent_signature(inchi1)
         sig2 = InChI.substituent_position_independent_signature(inchi2)
 

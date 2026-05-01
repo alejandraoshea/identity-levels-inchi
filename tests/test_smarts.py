@@ -1,8 +1,7 @@
 import unittest
 from rdkit import Chem
-from src.backend.lipid.lipid_structure_detector import LipidHeadValidator
+from src.backend.lipid.lipid_analysis import LipidHeadValidator
 from src.backend.inchi.determine_levels_id import InChI
-
 
 class TestGlycosylglycerolTeacher(unittest.TestCase):
     def setUp(self):
@@ -17,30 +16,24 @@ class TestGlycosylglycerolTeacher(unittest.TestCase):
         self.wrong = Chem.MolFromSmiles(self.wrong_smiles)
     
     def test_01_core_no_match(self):
-        """Core (no FA) should NOT match any pattern"""
         result = self.validator.matches_any_valid_head(self.core)
         self.assertFalse(result, "CORE without FA should NOT match")
     
     def test_02_good_matches(self):
-        """GOOD (FA correct position) MUST match"""
         result = self.validator.matches_any_valid_head(self.good)
         self.assertTrue(result, "GOOD molecule MUST match - FA is in correct position!")
     
     def test_03_wrong_no_match(self):
-        """WRONG (FA wrong position) should NOT match"""
         result = self.validator.matches_any_valid_head(self.wrong)
         self.assertFalse(result, "WRONG molecule should NOT match - FA is in WRONG position!")
     
     def test_04_classes_detected(self):
-        """Check that GOOD molecule is classified"""
         classes = self.validator.identify_lipid_class(self.good)
         self.assertTrue(len(classes) > 0, f"GOOD should be classified. Got: {classes}")
-        print(f"  GOOD classified as: {classes}")
 
 
 class TestSphingoLipidsExcel(unittest.TestCase):
-    """Test sphingolipids from Excel file - Example 60, 64"""
-    
+    """Test sphingolipids from Excel file """
     def setUp(self):
         self.validator = LipidHeadValidator()
         
@@ -53,32 +46,22 @@ class TestSphingoLipidsExcel(unittest.TestCase):
         self.ex64_wrong = "[H][C@](N)(COP(OCC[N+](C)(C)C)([O-])=O)[C@@](OC(CCCCCCCCCCCCCCCCCCC)=O)([H])CCCCCCCCCCCCCCC"
     
     def test_01_ex60_correct_detected(self):
-        """Example 60 CORRECT should be detected as sphingolipid"""
         mol = Chem.MolFromSmiles(self.ex60_correct)
         classes = self.validator.identify_lipid_class(mol)
-        print(f"\n  Ex60 CORRECT classes: {classes}")
         self.assertTrue(len(classes) > 0, "Ex60 CORRECT should be recognized")
     
     def test_02_ex60_wrong_not_same_class(self):
-        """Example 60 WRONG should not match same pattern as CORRECT"""
         mol_correct = Chem.MolFromSmiles(self.ex60_correct)
         mol_wrong = Chem.MolFromSmiles(self.ex60_wrong)
         
         classes_correct = self.validator.identify_lipid_class(mol_correct)
         classes_wrong = self.validator.identify_lipid_class(mol_wrong)
         
-        print(f"  Ex60 CORRECT: {classes_correct}")
-        print(f"  Ex60 WRONG: {classes_wrong}")
-        
-        self.assertNotEqual(classes_correct, classes_wrong, 
-                           "CORRECT and WRONG should have different classifications")
+        self.assertNotEqual(classes_correct, classes_wrong, "CORRECT and WRONG should have different classifications")
     
     def test_03_ex64_sphingomyelin_detected(self):
-        """Example 64 CORRECT should be detected as sphingomyelin"""
         mol = Chem.MolFromSmiles(self.ex64_correct)
         classes = self.validator.identify_lipid_class(mol)
-        print(f"\n  Ex64 CORRECT classes: {classes}")
-        
         self.assertTrue(len(classes) > 0, "Ex64 should be recognized as sphingolipid")
 
 
@@ -88,23 +71,17 @@ class TestGlycerolipidsExcel(unittest.TestCase):
     def setUp(self):
         self.validator = LipidHeadValidator()
         
-        # Example 70: Triacylglycerol
         # 1-dodecanoyl-2-hexadecanoyl-3-octadecanoyl-sn-glycerol
         self.tg_smiles = "CCCCCCCCCCCC(=O)OCC(COC(=O)CCCCCCCCCCCCCCC)OC(=O)CCCCCCCCCCCCCCCCC"
     
     def test_01_triacylglycerol_detected(self):
-        """Triacylglycerol should be detected"""
         mol = Chem.MolFromSmiles(self.tg_smiles)
         classes = self.validator.identify_lipid_class(mol)
-        print(f"\n  TG classes: {classes}")
-        
         self.assertTrue(len(classes) > 0, "Triacylglycerol should be recognized")
         self.assertIn("Triacylglycerols", classes, "Should be classified as Triacylglycerol")
 
 
 class TestDiacylglycerolIsomers(unittest.TestCase):
-    """Test 1,2-DG vs 1,3-DG distinction"""
-    
     def setUp(self):
         self.validator = LipidHeadValidator()
         
@@ -121,16 +98,11 @@ class TestDiacylglycerolIsomers(unittest.TestCase):
         classes_12 = self.validator.identify_lipid_class(mol_12)
         classes_13 = self.validator.identify_lipid_class(mol_13)
         
-        print(f"\n  1,2-DG: {classes_12}")
-        print(f"  1,3-DG: {classes_13}")
-        
         self.assertTrue(len(classes_12) > 0, "1,2-DG should be recognized")
         self.assertTrue(len(classes_13) > 0, "1,3-DG should be recognized")
 
-
 class TestInChIComparison(unittest.TestCase):
     def test_01_same_lipid_class_equal(self):
-        # Two simple DGs
         dg1 = "CCCCCCCC(=O)OCC(O)COC(=O)CCCCCCCC"
         dg2 = "CCCCCCCC(=O)OCC(O)COC(=O)CCCCCCCC"
         
@@ -144,7 +116,6 @@ class TestInChIComparison(unittest.TestCase):
         self.assertTrue(result, "Identical DGs should be equal")
     
     def test_02_different_class_not_equal(self):
-        # DG vs TG
         dg = "CCCCCCCC(=O)OCC(O)COC(=O)CCCCCCCC"
         tg = "CCCCCCCC(=O)OCC(COC(=O)CCCCCCCC)OC(=O)CCCCCCCC"
         
@@ -170,7 +141,6 @@ class TestEdgeCases(unittest.TestCase):
     def test_02_fatty_acid_detected(self):
         palmitic = Chem.MolFromSmiles("CCCCCCCCCCCCCCCC(=O)O")
         classes = self.validator.identify_lipid_class(palmitic)
-        print(f"\n  Palmitic acid: {classes}")
         self.assertTrue(len(classes) > 0, "Fatty acid should be recognized")
 
 
@@ -187,20 +157,7 @@ def run_tests():
     
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
-    
-    print("\n" + "="*70)
-    print("FINAL RESULTS")
-    print("="*70)
-    print(f"Tests run: {result.testsRun}")
-    print(f"Passed: {result.testsRun - len(result.failures) - len(result.errors)}")
-    print(f"Failed: {len(result.failures)}")
-    print(f"Errors: {len(result.errors)}")
-    
-    if result.wasSuccessful():
-        print("\n✅ ALL TESTS PASSED - Your system is working!")
-    else:
-        print("\n❌ SOME TESTS FAILED - Review above")
-    
+
     return result
 
 

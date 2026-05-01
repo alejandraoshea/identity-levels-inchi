@@ -3,8 +3,8 @@ from functools import lru_cache
 from rdkit import Chem
 from rdkit.Chem import MolToSmiles
 from collections import Counter
-from backend.lipid.lipid_tail_extraction import TailExtractor
-from backend.lipid.lipid_comparator import LipidComparator
+from src.backend.lipid.lipid_tail_extraction import TailExtractor
+from src.backend.lipid.lipid_analysis import LipidComparator
 
 class LipidComparator:
     @staticmethod
