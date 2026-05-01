@@ -1,6 +1,7 @@
 from rdkit import Chem
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
+from backend.lipid.lipid_analysis import LipidAnalysis
 
 @dataclass
 class HeadgroupPattern:
@@ -219,30 +220,28 @@ class LipidHeadValidator:
     def matches_pattern(self, mol: Chem.Mol, pattern_id: str) -> bool:
         """
         Check if a molecule matches a specific headgroup pattern.
+        
         Args:
             mol: RDKit molecule to test
             pattern_id: ID of the pattern (key in HEADGROUP_PATTERNS)
         
         Returns:
-            True if molecule matches the pattern (FA in correct position)
+            True if molecule matches the pattern
         """
         if pattern_id not in self.compiled_patterns:
             return False
         
-        _, mol_pattern = self.compiled_patterns[pattern_id]
-        match = mol.HasSubstructMatch(mol_pattern)
-
-        if not match:
+        pattern_info, mol_pattern = self.compiled_patterns[pattern_id]
+        
+        # STEP 1: Check SMARTS match
+        if not mol.HasSubstructMatch(mol_pattern):
             return False
         
-        if pattern_id in ["glycosylglycerol_sn1"]:
-            if not self.has_fatty_acid_tail(mol):
+        # STEP 2: If pattern expects FA(s), verify they exist
+        if pattern_info.fa_positions:
+            if not LipidAnalysis.has_long_carbon_chain(mol, min_len=6):
                 return False
-            
-        if pattern_id == "fatty_acid":
-            if not self.has_fatty_acid_tail(mol):
-                return False
-
+        
         return True
     
     def matches_any_valid_head(self, mol: Chem.Mol) -> bool:
@@ -272,35 +271,6 @@ class LipidHeadValidator:
             if self.matches_pattern(mol, pattern_id):
                 matches.append(pattern_info)
         return matches
-    
-    def has_fatty_acid_tail(self, mol: Chem.Mol, min_carbons: int = 6) -> bool:
-        """Check if molecule has at least one long carbon chain (fatty acid-like)."""
-        for atom in mol.GetAtoms():
-            if atom.GetAtomicNum() != 6:
-                continue
-
-            visited = set()
-            stack = [(atom.GetIdx(), 0)]
-
-            while stack:
-                idx, length = stack.pop()
-                if idx in visited:
-                    continue
-
-                visited.add(idx)
-                atom_obj = mol.GetAtomWithIdx(idx)
-
-                if atom_obj.GetAtomicNum() != 6:
-                    continue
-
-                length += 1
-                if length >= min_carbons:
-                    return True
-
-                for nbr in atom_obj.GetNeighbors():
-                    stack.append((nbr.GetIdx(), length))
-
-        return False
     
     def identify_lipid_class(self, mol: Chem.Mol) -> List[str]: 
         """
