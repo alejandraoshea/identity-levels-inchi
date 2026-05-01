@@ -11,6 +11,20 @@ class LipidAnalysis:
     #min chain length to consider it a FA
     MIN_TAIL_CARBONS = 6
 
+    HEAD_ANCHORS = {
+        "carboxyl": Chem.MolFromSmarts("C(=O)[O;H,-]"),
+        "phosphate": Chem.MolFromSmarts("P(=O)([O;H,-])[O;H,-]"),
+        "phosphorylcholine": Chem.MolFromSmarts("OP(=O)([O-])OCC[N+](C)(C)C"),
+        "phosphorylethanolamine": Chem.MolFromSmarts("OP(=O)([O-])OCCN"),
+        "phosphorylserine": Chem.MolFromSmarts("OP(=O)([O-])OC(N)C(=O)[O-]"),
+        "phosphorylinositol": Chem.MolFromSmarts("OP(=O)([O-])OC1C(O)C(O)C(O)C(O)C1O"),
+        "sulfate": Chem.MolFromSmarts("OS(=O)(=O)[O;H,-]"),
+        "choline": Chem.MolFromSmarts("OCC[N+](C)(C)C"),
+        "ethanolamine": Chem.MolFromSmarts("OCCN"),
+        "serine": Chem.MolFromSmarts("OC(N)C(=O)[O-]")
+    }
+
+
     @staticmethod
     def is_lipid_rdkit(mol):
         if mol is None:

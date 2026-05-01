@@ -388,8 +388,17 @@ class InChI:
         scaffold, subs = InChI.get_substituent_signatures(mol)
         return (scaffold, subs)
     
+    """
+    CRITICAL FIX FOR inchi.py - areEqualSubstituentIndependent method
+    Replace your ENTIRE method with this corrected version
+    """
+
     @staticmethod
     def areEqualSubstituentIndependent(inchi1: str, inchi2: str) -> bool:
+        """
+        Compare molecules ignoring substituent positions.
+        CORRECTED VERSION - fixes all issues ChatGPT identified.
+        """
         # STEP 1: remove isotopes
         inchi1 = InChIParser.removeIsotopicLayers(inchi1)
         inchi2 = InChIParser.removeIsotopicLayers(inchi2)
@@ -421,31 +430,51 @@ class InChI:
         is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1, use_classyfire=False)
         is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2, use_classyfire=False)
 
-        # CASE 1: both are lipids
+        # Different lipid status → NOT equal
+        if is_lipid1 != is_lipid2:
+            return False
+
+        # === CASE 1: BOTH ARE LIPIDS ===
         if is_lipid1 and is_lipid2:
             validator = LipidHeadValidator()
 
-            class1 = validator.identify_lipid_class(mol1)
-            class2 = validator.identify_lipid_class(mol2)
+            # Get lipid classes (returns List[str])
+            classes1 = validator.identify_lipid_class(mol1)
+            classes2 = validator.identify_lipid_class(mol2)
 
-            if class1 and class2:
-                if class1 and class2 and class1.isdisjoint(class2):
+            # CRITICAL LOGIC:
+            # - Both recognized and different classes → NOT equal
+            # - One recognized, one not → NOT equal
+            # - Both recognized same class OR both not recognized → compare tails
+
+            if classes1 and classes2:
+                # Both recognized - check if they share ANY common class
+                common = set(classes1) & set(classes2)
+                if not common:
+                    # No overlap → different classes → NOT equal
                     return False
-
-            elif class1 or class2:
+            elif classes1 or classes2:
+                # Only ONE is recognized → NOT equal
                 return False
 
-            # Tail comparison
+            # If we reach here: either both same class OR both unrecognized
+            # → Compare by tails
+
             tails1 = TailExtractor.extract_tails(mol1)
             tails2 = TailExtractor.extract_tails(mol2)
 
-            # Level C: Compare tail signatures
-            sigs1 = [LipidAnalysis.tail_sig_levelC(t) for t in tails1]
-            sigs2 = [LipidAnalysis.tail_sig_levelC(t) for t in tails2]
+            if not tails1 or not tails2:
+                # Can't extract tails → fallback to atom count
+                return LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2)
 
-            if Counter(sigs1) == Counter(sigs2):
+            # Level C: Compare tail signatures (C, DB, O counts)
+            sigs1 = sorted([LipidAnalysis.tail_sig_levelC(t) for t in tails1])
+            sigs2 = sorted([LipidAnalysis.tail_sig_levelC(t) for t in tails2])
+
+            if sigs1 == sigs2:
                 return True
 
+            # Global totals
             total1 = (
                 sum(t["C"] for t in tails1),
                 sum(t["DB"] for t in tails1),
@@ -461,14 +490,14 @@ class InChI:
             if total1 == total2:
                 return True
 
-            # Atom count fallback
+            # Atom count fallback (same number of tails)
             if len(tails1) == len(tails2):
                 if LipidAnalysis.atom_count(mol1) == LipidAnalysis.atom_count(mol2):
                     return True
 
             return False
 
-        # CASE 2: not lipids
+        # === CASE 2: BOTH ARE NON-LIPIDS ===
         sig1 = InChI.substituent_position_independent_signature(inchi1)
         sig2 = InChI.substituent_position_independent_signature(inchi2)
 

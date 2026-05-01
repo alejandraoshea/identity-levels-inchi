@@ -30,9 +30,10 @@ class LipidHeadValidator:
         # glycosylglycerols
         "glycosylglycerol_sn1": HeadgroupPattern(
             name="Glycosylglycerol (FA at sn-1)",
-            smarts="O[C@H]1[C@H](OC[C@H](O)C[OX2][CX3](=O)[#6])O[C@H](CO[C@H]2O[C@H](CO)[C@H](O)[C@H](O)[C@H]2O)[C@H](O)[C@@H]1O",
+            smarts="O[C@H]1[C@H](OC[C@H](O)C[OX2][CX3](=O)[CX4,CX3]~[CX4,CX3]~[CX4,CX3])O[C@H](CO[C@H]2O[C@H](CO)[C@H](O)[C@H](O)[C@H]2O)[C@H](O)[C@@H]1O",
             lipid_class="Glycoglycerolipids",
             fa_positions=["sn-1"],
+            description="Glycosylglycerol"
         ),
         
         #diacylglycerols (DG)
@@ -126,7 +127,7 @@ class LipidHeadValidator:
         #cermides (Cer) - Sphingolipids
         "ceramide": HeadgroupPattern(
             name="Ceramide",
-            smarts="[CH2X4][OX2H1].[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]=[CHX3]",
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6]",
             lipid_class="Ceramides",
             fa_positions=["N-acyl"],
             description="Sphingoid base with N-acyl FA"
@@ -135,10 +136,34 @@ class LipidHeadValidator:
         #sphingomyelins (SM)
         "sphingomyelin": HeadgroupPattern(
             name="Sphingomyelin (SM)",
-            smarts="[CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1H1-])[OX2][CH2X4][CH2X4][NX4+]([CH3X4])([CH3X4])[CH3X4].[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]=[CHX3]",
+            smarts="[NX3][CX3](=O)[#6].*OP(=O)([O-])OCC[N+](C)(C)C",
             lipid_class="Sphingomyelins",
             fa_positions=["N-acyl"],
-            description="SM with phosphocholine headgroup"
+            description="SM - detects N-acyl FA on sphingoid base"
+        ),
+
+        "neutral_glycosphingolipid": HeadgroupPattern(
+            name="Neutral glycosphingolipid",
+            smarts="[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]=[CHX3]",  # Ceramide base
+            lipid_class="Neutral glycosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Glycosphingolipid with sugar residues"
+        ),
+        
+        "acidic_glycosphingolipid": HeadgroupPattern(
+            name="Acidic glycosphingolipid",
+            smarts="[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]",  # Sphinganine base
+            lipid_class="Acidic glycosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Glycosphingolipid with acidic groups"
+        ),
+        
+        "ceramide_phosphoinositol": HeadgroupPattern(
+            name="Ceramide phosphoinositol",
+            smarts="[NX3H1][CX3](=[OX1])[#6].[PX4](=[OX1])[OX2][CH]1[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]1[OX2H1]",
+            lipid_class="Phosphosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Ceramide with inositol phosphate"
         ),
 
         "sterol_core": HeadgroupPattern(
@@ -158,7 +183,7 @@ class LipidHeadValidator:
 
         "fatty_acid": HeadgroupPattern(
             name="Fatty acid",
-            smarts="[CX3](=O)[OX2H1]",
+            smarts="[CX3](=O)[OX2H1,O-][CX4][CX4,CX3]~[CX4,CX3]~[CX4,CX3]~[CX4,CX3]",
             lipid_class="Fatty acids",
             fa_positions=[]
         ),
@@ -230,20 +255,22 @@ class LipidHeadValidator:
         """
         matches = []
         for pattern_id, (pattern_info, mol_pattern) in self._compiled_patterns.items():
-            if mol.HasSubstructMatch(mol_pattern):
+            if self.matches_pattern(mol, pattern_id):
                 matches.append(pattern_info)
         return matches
     
-    def identify_lipid_class(self, mol: Chem.Mol) -> Optional[str]:
+    def identify_lipid_class(self, mol: Chem.Mol) -> List[str]:  # Note: List[str] not Optional[str]
         """
         Identify the lipid class based on headgroup pattern.
         Args:
             mol: RDKit molecule to classify
         Returns:
-            Lipid class name (e.g., "Glycoglycerolipids") or None
+            List of lipid class names (can be multiple if molecule matches multiple patterns)
         """
         matches = self.get_matching_patterns(mol)
         return sorted(set(m.lipid_class for m in matches)) if matches else []
+        # Returns: ['Sphingomyelins'] or [] or ['Glycoglycerolipids', 'Neutral glycosphingolipids']
+    
     
     def validate_structure(self, mol: Chem.Mol, verbose: bool = False) -> Dict:
         """
@@ -290,17 +317,3 @@ class LipidHeadValidator:
         """
         validator = LipidHeadValidator()
         return validator.matches_any_valid_head(mol)
-
-
-    def get_lipid_class(mol: Chem.Mol) -> Optional[str]:
-        """
-        Identify the lipid class of a molecule.
-        
-        Args:
-            mol: RDKit molecule
-        
-        Returns:
-            Lipid class name or None
-        """
-        validator = LipidHeadValidator()
-        return validator.identify_lipid_class(mol)
