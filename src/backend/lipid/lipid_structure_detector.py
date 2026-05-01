@@ -235,7 +235,6 @@ class LipidHeadValidator:
         if not match:
             return False
         
-        # 1. Fatty acid must REALLY exist
         if pattern_id in ["glycosylglycerol_sn1"]:
             if not self.has_fatty_acid_tail(mol):
                 return False
@@ -303,7 +302,7 @@ class LipidHeadValidator:
 
         return False
     
-    def identify_lipid_class(self, mol: Chem.Mol) -> List[str]:  # Note: List[str] not Optional[str]
+    def identify_lipid_class(self, mol: Chem.Mol) -> List[str]: 
         """
         Identify the lipid class based on headgroup pattern.
         Args:
