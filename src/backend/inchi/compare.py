@@ -35,33 +35,38 @@ def compare_text_files(list1, list2, config, mode="pairwise", only_equal=False):
 
     def process(i1, i2):
         comparison = InChI.get_ids(i1, i2, config)
-        matches = extract_matches(comparison)
 
-        if not matches:
-            return None
-
-        return {
-            "inchi_1": i1,
-            "inchi_2": i2,
-            "matches": matches
-        }
+        if only_equal:
+            matches = extract_matches(comparison)
+            if not matches:
+                return None
+            return {
+                "inchi_1": i1,
+                "inchi_2": i2,
+                "matches": matches
+            }
+        else:
+            return {
+                "inchi_1": i1,
+                "inchi_2": i2,
+                "results": {k.name: bool(v) for k, v in comparison.items()}
+            }
 
     if mode == "pairwise":
         for i1, i2 in zip(list1, list2):
             res = process(i1, i2)
-            if res:
+            if res is not None:        # ← use "is not None", not truthiness
                 results.append(res)
 
     elif mode == "cross":
         for i1 in list1:
             for i2 in list2:
                 res = process(i1, i2)
-                if res:
+                if res is not None:
                     results.append(res)
 
     return {"comparisons": results}
-
-
+    
 def compare_mgf_files(file1, file2, config, level="COMPLETE_IDENTITY"):
     entries1 = MgfParser.parse_mgf(file1)
     entries2 = MgfParser.parse_mgf(file2)

@@ -3,7 +3,7 @@ from functools import lru_cache
 from rdkit import Chem
 from rdkit.Chem import MolToSmiles
 from collections import Counter
-from src.backend.lipid.lipid_tail_extraction import TailExtractor
+from backend.lipid.lipid_tail_extraction import TailExtractor
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
