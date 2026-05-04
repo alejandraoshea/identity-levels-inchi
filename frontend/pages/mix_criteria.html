@@ -2,40 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>InChI Indentity Levels</title>
-
+<title>InChI Identity Levels</title>
 <link rel="stylesheet" href="../css/style.css">
 <link rel="icon" type="image/x-icon" href="/frontend/assets/svg/component.ico">
 <script src="https://unpkg.com/@rdkit/rdkit/dist/RDKit_minimal.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.0.4/3Dmol-min.js"></script>
 </head>
-
 <body>
     <div class="header">
         <div class="title">Metaboid Identity Comparison</div>
         <div class="nav">
             <a href="compare.html">Compare</a>
             <a href="mix_criteria.html">Advanced</a>
-
             <div class="dropdown">
                 <span class="dropdown-toggle">Files ▾</span>
                 <div class="dropdown-menu">
                     <a href="text_files.html">Text</a>
-                    <a href="text_files.html">MGF</a>
+                    <a href="mgf_files.html">MGF</a>
                 </div>
             </div>
         </div>
+        <div></div>
     </div>
-
     <div class="container">
         <div class="panel">
-            <textarea id="inchi1_adv" placeholder="Molecule A (InChI)"></textarea>
-            <textarea id="inchi2_adv" placeholder="Molecule B (InChI)"></textarea>
-            <button onclick="compare(true)">Compare</button>
-            <button onclick="clearAdvancedSelection()">Clear Selected Levels</button>
+            <div class="title-section">Advanced Compare</div>
+            <textarea id="inchi1_adv" placeholder="Molecule A — paste InChI here"></textarea>
+            <textarea id="inchi2_adv" placeholder="Molecule B — paste InChI here"></textarea>
+            <button data-compare onclick="compare(true)">Compare</button>
+            <button class="secondary" onclick="clearAdvancedSelection()">Clear Levels</button>
         </div>
-        
-   
         <div class="panel center">
             <div class="molecule-card">
                 <div class="molecule-header">Molecule A</div>
@@ -46,20 +42,22 @@
                 <div id="mol2" class="molecule"></div>
             </div>
         </div>
-
         <div id="layers-advanced" class="panel">
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="complete_identity"> Complete Identity</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="isotope"> Isotope Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="salt"> Salt Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="charge"> Charge Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="double_bond"> Double Bond Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="stereo_cis_trans"> Cis/Trans Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="tautomer"> Tautomer Independence</label></div>
-            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="substituent"> Substituent Independence</label></div>
+            <div class="layers-section-title">Select Levels to Compare</div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="complete_identity"><span class="layer-label">Complete Identity</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="isotope"><span class="layer-label">Isotope Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="salt"><span class="layer-label">Salt Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="charge"><span class="layer-label">Charge Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="double_bond"><span class="layer-label">Double Bond Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="stereo_cis_trans"><span class="layer-label">Cis/Trans Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="tautomer"><span class="layer-label">Tautomer Independence</span></label></div>
+            <div class="layer"><label><input type="checkbox" class="level-checkbox" value="substituent"><span class="layer-label">Substituent Independence</span></label></div>
         </div>
     </div>
-
-<div id="toast-container"></div>
-<script src="../js/scripts.js"></script>
+    <div id="toast-container"></div>
+    <script src="../js/ui.js"></script>
+    <script src="../js/visualize.js"></script>
+    <script src="../js/compare.js"></script>
+    <script>initTextareas(); markActiveNav();</script>
 </body>
 </html>
