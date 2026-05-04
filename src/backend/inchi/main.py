@@ -1,4 +1,4 @@
-from input.input_inchi import InputInChI
+from backend.input.input_inchi import InputInChI
 from backend.inchi.determine_levels_id import InChI
 from backend.inchi.config_loader import load_config
 from backend.inchi import InChI

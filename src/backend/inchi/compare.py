@@ -67,7 +67,13 @@ def compare_text_files(list1, list2, config, mode="pairwise", only_equal=False):
 
     return {"comparisons": results}
     
-def compare_mgf_files(file1, file2, config, level="COMPLETE_IDENTITY"):
+def compare_mgf_files(
+    file1,
+    file2,
+    config,
+    level="COMPLETE_IDENTITY",
+    merge_msms=False
+):
     entries1 = MgfParser.parse_mgf(file1)
     entries2 = MgfParser.parse_mgf(file2)
 
@@ -101,4 +107,37 @@ def compare_mgf_files(file1, file2, config, level="COMPLETE_IDENTITY"):
                 "entries": [item["entry"]]
             })
 
+    if merge_msms:
+        unified = []
+
+        for group in groups:
+            merged_entry = merge_group_entries(group["entries"])
+            unified.append({
+                "representative": group["representative"],
+                "merged_entry": merged_entry,
+                "num_spectra": len(group["entries"])
+            })
+
+        return {"groups": unified}
+
     return {"groups": groups}
+
+def merge_group_entries(entries):
+    merged = {}
+    base = entries[0].copy()
+
+    for key in base:
+        values = set()
+
+        for e in entries:
+            if key in e:
+                values.add(e[key])
+
+        merged[key] = list(values) if len(values) > 1 else list(values)[0]
+
+    # DEFINIR para añadir (eg:
+    # - merge de picos MS/MS
+    # - normalización
+    # - clustering)
+
+    return merged
