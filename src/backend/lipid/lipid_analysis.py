@@ -4,6 +4,7 @@ from rdkit import Chem
 from rdkit.Chem import MolToSmiles
 from collections import Counter
 from backend.lipid.lipid_tail_extraction import TailExtractor
+from backend.lipid.lipid_pattern_generator import build_combined_patterns
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
@@ -30,7 +31,7 @@ class LipidHeadValidator:
     This class checks whether fatty acids are attached at the CORRECT positions
     on the lipid headgroup (sn-1, sn-2, sn-3, etc.).
     """
-    HEADGROUP_PATTERNS = {
+    MANUAL_PATTERNS = {
         # glycosylglycerols
         "glycosylglycerol_sn1": HeadgroupPattern(
             name="Glycosylglycerol (FA at sn-1)",
@@ -140,31 +141,15 @@ class LipidHeadValidator:
         #sphingomyelins (SM)
         "sphingomyelin": HeadgroupPattern(
             name="Sphingomyelin (SM)",
-            smarts="[NX3H1,NX3H2][CX3](=[OX1])[#6]",  # N-acyl amide linkage
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6]",
             lipid_class="Sphingomyelins",
             fa_positions=["N-acyl"],
             description="SM - detects N-acyl FA on sphingoid base"
         ),
 
-        "neutral_glycosphingolipid": HeadgroupPattern(
-            name="Neutral glycosphingolipid",
-            smarts="[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]=[CHX3]",  # Ceramide base
-            lipid_class="Neutral glycosphingolipids",
-            fa_positions=["N-acyl"],
-            description="Glycosphingolipid with sugar residues"
-        ),
-        
-        "acidic_glycosphingolipid": HeadgroupPattern(
-            name="Acidic glycosphingolipid",
-            smarts="[CHX4]([NX3H1][CX3](=[OX1])[#6])[CHX4]",  # Sphinganine base
-            lipid_class="Acidic glycosphingolipids",
-            fa_positions=["N-acyl"],
-            description="Glycosphingolipid with acidic groups"
-        ),
-        
         "ceramide_phosphoinositol": HeadgroupPattern(
             name="Ceramide phosphoinositol",
-            smarts="[NX3H1][CX3](=[OX1])[#6].[PX4](=[OX1])[OX2][CH]1[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]1[OX2H1]",
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6].[PX4](=[OX1])[OX2][CH]1[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]1[OX2H1]",
             lipid_class="Phosphosphingolipids",
             fa_positions=["N-acyl"],
             description="Ceramide with inositol phosphate"
@@ -194,15 +179,63 @@ class LipidHeadValidator:
 
         "ganglioside_core": HeadgroupPattern(
             name="Ganglioside core",
-            smarts="[NX3H1][CX3](=[OX1])[#6].[CH]1O[CH](CO)[CH](O)[CH](O)[CH]1O",
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6].[CH]1O[CH](CO)[CH](O)[CH](O)[CH]1O",
             lipid_class="Gangliosides",
             fa_positions=["N-acyl"],
             description="Ganglioside - requires ceramide base with sugar"
         ),
         
-        #TODO: ADD MORE
+        "glycosphingolipid_galactose": HeadgroupPattern(
+            name="Glycosphingolipid with Galactose",
+            smarts="[H][C@](NC(CCCCCCCCCCCCCCC)=O)(CO[C@H]1[C@H](O)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC",
+            lipid_class="Neutral glycosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Neutral glycosphingolipid with galactose (Example 7)"
+        ),
+        
+        "glycosphingolipid_glucose": HeadgroupPattern(
+            name="Glycosphingolipid with Glucose",
+            smarts="[H][C@](NC(CCCCCCCCCCCCCCC)=O)(CO[C@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC",
+            lipid_class="Neutral glycosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Neutral glycosphingolipid with glucose"
+        ),
+        
+        "acidic_glycosphingolipid_glucuronic": HeadgroupPattern(
+            name="Acidic Glycosphingolipid with Glucuronic acid",
+            smarts="[C@H](NC(=O)[#6])[C@H](O)CCCCCCCC", 
+            lipid_class="Acidic glycosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Acidic glycosphingolipid - REQUIRES N-acyl FA (Example 60 from Excel)"
+        ),
+        
+        "sphingomyelin_detailed": HeadgroupPattern(
+            name="Sphingomyelin (detailed)",
+            smarts="[H][C@](NC(CCCCCCCCCCCCCCCCCCC)=O)(COP(OCC[N+](C)(C)C)([O-])=O)[C@@](O)([H])CCCCCCCCCCCCCCC",
+            lipid_class="Phosphosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Sphingomyelin with phosphocholine (Example 64 from Excel)"
+        ),
+        
+        "ceramide_phosphoethanolamine": HeadgroupPattern(
+            name="Ceramide Phosphoethanolamine",
+            smarts="[H][C@](NC(CCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(OCCN)(O)=O)[C@@](O)([H])CCCCCCCCCCCCCCC",
+            lipid_class="Phosphosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Ceramide phosphoethanolamine (Example 65 from Excel)"
+        ),
+        
+        "ceramide_phosphoinositol_detailed": HeadgroupPattern(
+            name="Ceramide Phosphoinositol (detailed)",
+            smarts="[H][C@](NC(C(O)CCCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O)(O)=O)[C@@](O)([H])CCCCCCCCCCCCCCCCC",
+            lipid_class="Phosphosphingolipids",
+            fa_positions=["N-acyl"],
+            description="Ceramide with inositol phosphate (Example 66 from Excel)"
+        ),
     }
-    
+
+    HEADGROUP_PATTERNS = build_combined_patterns(manual_patterns=MANUAL_PATTERNS, excel_path="Naming_Example.xlsx")
+
     def __init__(self):
         """Initialize the validator and compile all SMARTS patterns."""
         self.compiled_patterns: Dict[str, Tuple[HeadgroupPattern, Chem.Mol]] = {}
@@ -248,15 +281,9 @@ class LipidHeadValidator:
         return True
     
     def matches_any_valid_head(self, mol: Chem.Mol) -> bool:
-        """
-        Check if molecule matches ANY valid headgroup pattern.
-        Args:
-            mol: RDKit molecule to test
-        Returns:
-            True if molecule has a recognized lipid headgroup with FA in correct position
-        """
         for pattern_id in self.compiled_patterns:
             if self.matches_pattern(mol, pattern_id):
+                print("❌ FALSE POSITIVE FROM:", pattern_id)
                 return True
         return False
     
@@ -532,7 +559,6 @@ class LipidComparator:
 
         tails = TailExtractor.extract_tails(mol)
         
-        # use already-computed values - no recomputation needed
         return tuple(
             sorted([
                 (tail["C"], tail["DB"], tuple(sorted(tail["O_positions"])))
