@@ -41,7 +41,6 @@ class TestExcelExample60(unittest.TestCase):
         result = self.validator.matches_any_valid_head(mol)
         self.assertTrue(result, "Example 60 POSITIVE should match")
     
-    #TODO: FIX THIS
     def test_negative_no_match(self):
         mol = Chem.MolFromSmiles(self.negative)
         self.assertIsNotNone(mol, "Negative SMILES should be valid")
