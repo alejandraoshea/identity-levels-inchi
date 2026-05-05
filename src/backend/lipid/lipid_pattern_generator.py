@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List
 from dataclasses import dataclass
 
-
 @dataclass
 class HeadgroupPattern:
     """
@@ -200,34 +199,3 @@ def build_combined_patterns(manual_patterns: Dict[str, HeadgroupPattern],
         print(f"Using manual patterns only ({len(all_patterns)} total)")
     
     return all_patterns
-
-
-if __name__ == "__main__":
-    excel_path = "Naming_Example.xlsx"
-    
-    if Path(excel_path).exists():
-        # Test 1: Load templates
-        templates = PatternGenerator.load_templates_from_excel(excel_path)
-        print(f"\nTemplates loaded: {len(templates)}")
-        for tid in list(templates.keys())[:3]:
-            print(f"  {tid}: {templates[tid]['smarts'][:60]}...")
-        
-        # Test 2: Load sugars  
-        sugars = PatternGenerator.load_sugars_from_excel(excel_path)
-        print(f"\nSugars loaded: {len(sugars)}")
-        
-        # Test 3: Generate patterns
-        patterns = PatternGenerator.generate_patterns(templates, sugars)
-        print(f"\nGenerated: {len(patterns)} patterns")
-        
-        # Show first few
-        print("\nFirst 3 generated patterns:")
-        for pid in list(patterns.keys())[:3]:
-            p = patterns[pid]
-            print(f"\n  {pid}:")
-            print(f"    Name: {p.name}")
-            print(f"    Class: {p.lipid_class}")
-            print(f"    SMARTS: {p.smarts[:80]}...")
-    else:
-        print(f"\nExcel file not found: {excel_path}")
-    

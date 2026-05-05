@@ -141,7 +141,7 @@ class LipidHeadValidator:
         #sphingomyelins (SM)
         "sphingomyelin": HeadgroupPattern(
             name="Sphingomyelin (SM)",
-            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6]",
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6]",  # FIXED: Requires N-C bond!
             lipid_class="Sphingomyelins",
             fa_positions=["N-acyl"],
             description="SM - detects N-acyl FA on sphingoid base"
@@ -172,7 +172,7 @@ class LipidHeadValidator:
 
         "fatty_acid": HeadgroupPattern(
             name="Fatty acid",
-            smarts="[CX3](=O)[OX2H1]",
+            smarts="[CH2X4][CH2X4][CH2X4][CH2X4][CH2X4][CX3](=O)[OX2H1]",
             lipid_class="Fatty acids",
             fa_positions=[]
         ),
@@ -203,7 +203,7 @@ class LipidHeadValidator:
         
         "acidic_glycosphingolipid_glucuronic": HeadgroupPattern(
             name="Acidic Glycosphingolipid with Glucuronic acid",
-            smarts="[C@H](NC(=O)[#6])[C@H](O)CCCCCCCC", 
+            smarts="[C@H](NC(=O)[#6])[C@H](O)[#6]",
             lipid_class="Acidic glycosphingolipids",
             fa_positions=["N-acyl"],
             description="Acidic glycosphingolipid - REQUIRES N-acyl FA (Example 60 from Excel)"
@@ -235,7 +235,7 @@ class LipidHeadValidator:
     }
 
     HEADGROUP_PATTERNS = build_combined_patterns(manual_patterns=MANUAL_PATTERNS, excel_path="Naming_Example.xlsx")
-
+    
     def __init__(self):
         """Initialize the validator and compile all SMARTS patterns."""
         self.compiled_patterns: Dict[str, Tuple[HeadgroupPattern, Chem.Mol]] = {}
@@ -281,9 +281,15 @@ class LipidHeadValidator:
         return True
     
     def matches_any_valid_head(self, mol: Chem.Mol) -> bool:
+        """
+        Check if molecule matches ANY valid headgroup pattern.
+        Args:
+            mol: RDKit molecule to test
+        Returns:
+            True if molecule has a recognized lipid headgroup with FA in correct position
+        """
         for pattern_id in self.compiled_patterns:
             if self.matches_pattern(mol, pattern_id):
-                print("❌ FALSE POSITIVE FROM:", pattern_id)
                 return True
         return False
     
@@ -434,7 +440,6 @@ class LipidAnalysis:
 
             entry = data[0]
 
-            # check multiple taxonomy levels (more robust)
             taxonomy_fields = [
                 entry.get("kingdom", {}).get("name", ""),
                 entry.get("superclass", {}).get("name", ""),
