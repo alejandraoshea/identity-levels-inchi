@@ -55,7 +55,7 @@ def compare_text_files(list1, list2, config, mode="pairwise", only_equal=False):
     if mode == "pairwise":
         for i1, i2 in zip(list1, list2):
             res = process(i1, i2)
-            if res is not None:        # ← use "is not None", not truthiness
+            if res is not None:     
                 results.append(res)
 
     elif mode == "cross":
@@ -135,9 +135,5 @@ def merge_group_entries(entries):
 
         merged[key] = list(values) if len(values) > 1 else list(values)[0]
 
-    # DEFINIR para añadir (eg:
-    # - merge de picos MS/MS
-    # - normalización
-    # - clustering)
 
     return merged

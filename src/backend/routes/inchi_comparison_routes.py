@@ -84,7 +84,7 @@ def compare_files_api():
             return jsonify({"message": "Both lists required"}), 400
 
         config = load_config()
-
+ 
         result = compare_text_files(list1, list2, config, mode=mode, only_equal=True)
         return jsonify(result)
 
