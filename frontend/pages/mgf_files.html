@@ -28,7 +28,7 @@
     <div class="container">
         <div class="panel">
             <div class="title-section">Compare MGF Files</div>
-            <p class="subtitle">Upload two MGF files containing InChI or SMILES fields.</p>
+            <p class="subtitle">Upload two MGF files. InChI strings that match at the selected identity level will be normalized to a single canonical form across both files.</p>
 
             <div class="file-upload">
                 <label class="file-btn">
@@ -52,6 +52,14 @@
                 <option value="TAUTOMER_INDEPENDENCE">Tautomer Independence</option>
                 <option value="SUBSTITUENT_POSITION_INDEPENDENCE">Substituent Independence</option>
             </select>
+
+            <label style="font-size:12px;font-weight:500;color:var(--muted);">Output Filename</label>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <input type="text" id="mgf-output-name" placeholder="unified_output"
+                    style="flex:1;padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);
+                    font-size:13px;font-family:var(--font-mono);background:#fafbfc;color:var(--text);">
+                <span style="font-size:12px;color:var(--muted);flex-shrink:0;">.mgf</span>
+            </div>
 
             <button id="mgf-compare-btn">Compare Files</button>
         </div>

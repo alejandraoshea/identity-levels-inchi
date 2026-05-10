@@ -104,39 +104,33 @@ function renderResults(data) {
         "</div>";
     container.appendChild(summary);
 
-    if (Object.keys(inputCounts).length > 0) {
-        var countSection = document.createElement("div");
-        countSection.className = "mgf-file-counts";
+    if (data.output_mgf_b64) {
+        var outputName = (document.getElementById("mgf-output-name").value.trim() || "unified_output") + ".mgf";
+        var downloadBar = document.createElement("div");
+        downloadBar.className = "mgf-download-bar";
+        downloadBar.innerHTML =
+            "<div class='mgf-download-info'>" +
+                "<span class='mgf-download-icon'>⬇</span>" +
+                "<div>" +
+                    "<div style='font-size:13px;font-weight:600;color:var(--text);'>" + outputName + "</div>" +
+                    "<div style='font-size:11px;color:var(--muted);'>Normalized MGF with unified InChI strings</div>" +
+                "</div>" +
+            "</div>" +
+            "<button class='mgf-download-btn' id='mgf-dl-btn'>Download</button>";
+        container.appendChild(downloadBar);
 
-        Object.keys(inputCounts).forEach(function(fname) {
-            var row = document.createElement("div");
-            row.className = "mgf-file-count";
-
-            var breakdownKey = Object.keys(breakdown).find(function(k) {
-                return k.indexOf(fname) === 0 && k.indexOf("internal") !== -1;
-            });
-            var internalChanges = breakdownKey !== undefined ? breakdown[breakdownKey] : null;
-
-            row.innerHTML =
-                "<span class='mgf-file-count-name'>" + fname + "</span>" +
-                "<span class='mgf-file-count-nums'>" +
-                    inputCounts[fname] + " entries" +
-                    (internalChanges !== null ? " · <strong>" + internalChanges + "</strong> InChIs normalized internally" : "") +
-                "</span>";
-            countSection.appendChild(row);
+        document.getElementById("mgf-dl-btn").addEventListener("click", function() {
+            var bytes = atob(data.output_mgf_b64);
+            var arr   = new Uint8Array(bytes.length);
+            for (var i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            var blob  = new Blob([arr], { type: "chemical/x-mdl-molfile" });
+            var url   = URL.createObjectURL(blob);
+            var a     = document.createElement("a");
+            a.href     = url;
+            a.download = outputName;
+            a.click();
+            URL.revokeObjectURL(url);
         });
-
-        var crossKey = Object.keys(breakdown).find(function(k) { return k.indexOf("_to_") !== -1; });
-        if (crossKey && breakdown[crossKey] > 0) {
-            var crossRow = document.createElement("div");
-            crossRow.className = "mgf-file-count mgf-cross-row";
-            crossRow.innerHTML =
-                "<span class='mgf-file-count-name'>Cross-file</span>" +
-                "<span class='mgf-file-count-nums'><strong>" + breakdown[crossKey] + "</strong> entries unified across files</span>";
-            countSection.appendChild(crossRow);
-        }
-
-        container.appendChild(countSection);
     }
 
     if (changesLog.length > 0) {

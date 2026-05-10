@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from backend.inchi.determine_levels_id import InChI
 from backend.inchi.compare import compare_pair, compare_text_files, compare_mgf_files
 from backend.inchi.config_loader import load_config, build_config_from_levels
-import tempfile, traceback, os
+import tempfile, traceback, os, base64
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -86,6 +86,9 @@ def compare_mgf_files_upload():
         file2 = request.files["file2"]
         level = request.form.get("level") or "COMPLETE_IDENTITY" 
 
+        original_name1 = file1.filename or "file_a.mgf"
+        original_name2 = file2.filename or "file_b.mgf"
+
         with tempfile.NamedTemporaryFile(mode="wb", delete=False, suffix=".mgf") as tmp1:
             file1.save(tmp1.name)
             tmp1_path = tmp1.name
@@ -94,11 +97,35 @@ def compare_mgf_files_upload():
             file2.save(tmp2.name)
             tmp2_path = tmp2.name
 
+        output_tmp = tempfile.mktemp(suffix=".mgf")
+
         config = load_config()
-        result = compare_mgf_files(tmp1_path, tmp2_path, config, level=level)
+        result = compare_mgf_files(tmp1_path, tmp2_path, config, level=level, output_mgf=output_tmp)
 
         os.unlink(tmp1_path)
         os.unlink(tmp2_path)
+
+        old_keys = list(result.get("input_counts", {}).keys())
+        for old_key in old_keys:
+            if tmp1_path.replace("\\", "/").split("/")[-1] in old_key.replace("\\", "/") or os.path.basename(tmp1_path) in old_key:
+                result["input_counts"][original_name1] = result["input_counts"].pop(old_key)
+                if "changes_breakdown" in result:
+                    for bk in list(result["changes_breakdown"].keys()):
+                        if os.path.basename(tmp1_path) in bk:
+                            new_bk = bk.replace(os.path.basename(tmp1_path), original_name1)
+                            result["changes_breakdown"][new_bk] = result["changes_breakdown"].pop(bk)
+            elif tmp2_path.replace("\\", "/").split("/")[-1] in old_key.replace("\\", "/") or os.path.basename(tmp2_path) in old_key:
+                result["input_counts"][original_name2] = result["input_counts"].pop(old_key)
+                if "changes_breakdown" in result:
+                    for bk in list(result["changes_breakdown"].keys()):
+                        if os.path.basename(tmp2_path) in bk:
+                            new_bk = bk.replace(os.path.basename(tmp2_path), original_name2)
+                            result["changes_breakdown"][new_bk] = result["changes_breakdown"].pop(bk)
+
+        if os.path.exists(output_tmp):
+            with open(output_tmp, "rb") as f_out:
+                result["output_mgf_b64"] = base64.b64encode(f_out.read()).decode("utf-8")
+            os.unlink(output_tmp)
 
         return jsonify(result)
 

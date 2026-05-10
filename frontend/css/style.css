@@ -959,8 +959,6 @@ input[type="checkbox"] {
     height: 10px;
 }
 
-/* ── MGF page ── */
-
 .mgf-toggle-row {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -1284,4 +1282,34 @@ input[type="checkbox"] {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.mgf-download-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+}
+
+.mgf-download-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mgf-download-icon {
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.mgf-download-btn {
+    width: auto;
+    padding: 8px 18px;
+    font-size: 13px;
+    flex-shrink: 0;
 }
