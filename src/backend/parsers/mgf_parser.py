@@ -1,3 +1,11 @@
+import json
+from pathlib import Path
+from typing import List, Dict, Optional
+from dataclasses import dataclass, asdict
+
+from backend.inchi.determine_levels_id import InChI
+from backend.inchi.inchi_layers_enum import InchiLayers
+
 class MgfParser:
 
     def parse_mgf(file_path):
@@ -50,253 +58,187 @@ class MgfParser:
                 })
 
         return result
-
-"""
-Simplified MGF deduplication using string-based InChI comparison.
-Bypasses RDKit entirely for COMPLETE_IDENTITY level.
-"""
-
-import json
-from pathlib import Path
-from typing import List, Dict, Optional, Tuple
-from dataclasses import dataclass, asdict
-from datetime import datetime
-
+    
 
 @dataclass
 class UnificationChange:
     """Tracks InChI unification changes"""
     original_inchi: str
     canonical_inchi: str
-    source_file: str
-    entry_title: str = ""
-    timestamp: str = ""
-    
-    def __post_init__(self):
-        if not self.timestamp:
-            self.timestamp = datetime.now().isoformat()
-
 
 class SimpleMgfDeduplicator:
-    """
-    Simple MGF deduplication using direct InChI string comparison.
-    Works for COMPLETE_IDENTITY without needing RDKit.
-    """
-    
-    def __init__(self, level: str = "COMPLETE_IDENTITY"):
+    def __init__(self, level: str = "COMPLETE_IDENTITY", config: dict = None):
         self.level = level
+        self.config = config
         self.changes_log: List[UnificationChange] = []
+        
+        self.level_map = {
+            "COMPLETE_IDENTITY": InchiLayers.COMPLETE_IDENTITY,
+            "ISOTOPIC_INDEPENDENCE": InchiLayers.ISOTOPIC_INDEPENDENCE,
+            "SALTS_INDEPENDENCE": InchiLayers.SALTS_INDEPENDENCE,
+            "CHARGES_INDEPENDENCE": InchiLayers.CHARGES_INDEPENDENCE,
+            "DOUBLE_BONDS_INDEPENDENCE": InchiLayers.DOUBLE_BONDS_INDEPENDENCE,
+            "STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE": InchiLayers.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE,
+            "TAUTOMER_INDEPENDENCE": InchiLayers.TAUTOMER_INDEPENDENCE,
+            "SUBSTITUENT_POSITION_INDEPENDENCE": InchiLayers.SUBSTITUENT_POSITION_INDEPENDENCE
+        }
     
     def parse_mgf(self, file_path: str) -> List[Dict]:
-        """Parse MGF file into list of entry dictionaries"""
         entries = []
         current = {}
+        current_peaks = []
 
         with open(file_path, "r") as f:
             for line in f:
-                line = line.strip()
+                line_stripped = line.strip()
 
-                if line == "BEGIN IONS":
+                if line_stripped == "BEGIN IONS":
                     current = {}
+                    current_peaks = []
 
-                elif line == "END IONS":
+                elif line_stripped == "END IONS":
                     if current:
+                        if current_peaks:
+                            current["_PEAKS"] = current_peaks
                         entries.append(current)
 
-                elif "=" in line:
-                    key, value = line.split("=", 1)
+                elif "=" in line_stripped:
+                    key, value = line_stripped.split("=", 1)
                     current[key.upper()] = value
+                
+                else:
+                    if line_stripped and current:
+                        current_peaks.append(line_stripped)
 
         return entries
     
     def extract_inchi(self, entry: Dict) -> Optional[str]:
-        """Extract InChI from MGF entry"""
         return entry.get("INCHI") or entry.get("SMILES")
     
     def inchis_match(self, inchi1: str, inchi2: str) -> bool:
-        """
-        Compare two InChIs based on the selected level.
-        For COMPLETE_IDENTITY: exact string match
-        """
         if not inchi1 or not inchi2:
             return False
         
-        # Normalize
         inchi1 = inchi1.strip()
         inchi2 = inchi2.strip()
         
         if self.level == "COMPLETE_IDENTITY":
             return inchi1 == inchi2
         
-        # Add other levels here if needed
-        # For now, fallback to exact match
-        return inchi1 == inchi2
-    
-    def deduplicate_file(
-        self, 
-        entries: List[Dict], 
-        source_file: str
-    ) -> Tuple[List[Dict], List[UnificationChange]]:
-        """
-        Deduplicate entries within a single file.
+        if not self.config:
+            print(f"Warning: Config required for level {self.level}, falling back to COMPLETE_IDENTITY")
+            return inchi1 == inchi2
         
-        Returns:
-            (deduplicated_entries, changes_log)
-        """
-        groups = []
-        local_changes = []
+        try:
+            comparison = InChI.get_ids(inchi1, inchi2, self.config)
+            level_enum = self.level_map.get(self.level, InchiLayers.COMPLETE_IDENTITY)
+            
+            return comparison.get(level_enum, False)
+        
+        except Exception as e:
+            print(f"Error comparing InChIs at level {self.level}: {e}")
+            return inchi1 == inchi2
+    
+    def unify_inchis_in_file(self, entries: List[Dict], source_file: str) -> List[Dict]:
+        canonical_map = {} 
         
         for entry in entries:
             inchi = self.extract_inchi(entry)
-            
             if not inchi:
-                # No InChI - keep as unique
-                groups.append({
-                    "canonical_inchi": None,
-                    "entries": [entry]
-                })
                 continue
             
-            placed = False
-            
-            # Try to match with existing groups
-            for group in groups:
-                if group["canonical_inchi"] is None:
-                    continue
-                
-                if self.inchis_match(inchi, group["canonical_inchi"]):
-                    # Match found - add to group
-                    group["entries"].append(entry)
-                    
-                    # Log if InChI is different (shouldn't happen for COMPLETE_IDENTITY)
-                    local_changes.append(UnificationChange(
-                            original_inchi=inchi,
-                            canonical_inchi=group["canonical_inchi"],
-                            source_file=source_file,
-                            entry_title=entry.get("TITLE", entry.get("NAME", ""))
-                    ))
-                    
-                    placed = True
+            found_canonical = None
+            for canonical_inchi in canonical_map.values():
+                if self.inchis_match(inchi, canonical_inchi):
+                    found_canonical = canonical_inchi
                     break
             
-            if not placed:
-                # Create new group with this InChI as canonical
-                groups.append({
-                    "canonical_inchi": inchi,
-                    "entries": [entry]
-                })
+            if found_canonical:
+                if inchi != found_canonical:
+                    self.changes_log.append(UnificationChange(
+                        original_inchi=inchi,
+                        canonical_inchi=found_canonical
+                    ))
+                
+                canonical_map[inchi] = found_canonical
+            else:
+                canonical_map[inchi] = inchi
         
-        # Merge entries within each group
-        deduplicated = []
-        for group in groups:
-            merged_entry = self.merge_entries(group["entries"])
+        modified_entries = []
+        for entry in entries:
+            entry_copy = entry.copy()
+            inchi = self.extract_inchi(entry_copy)
             
-            # Update to canonical InChI
-            if group["canonical_inchi"]:
-                merged_entry["INCHI"] = group["canonical_inchi"]
+            if inchi and inchi in canonical_map:
+                if "INCHI" in entry_copy:
+                    entry_copy["INCHI"] = canonical_map[inchi]
+                elif "SMILES" in entry_copy:
+                    entry_copy["SMILES"] = canonical_map[inchi]
             
-            deduplicated.append(merged_entry)
+            modified_entries.append(entry_copy)
         
-        return deduplicated, local_changes
+        return modified_entries
     
-    def cross_deduplicate(
+    def cross_unify(
         self,
         entries_a: List[Dict],
         entries_b: List[Dict],
         source_a: str = "File A",
         source_b: str = "File B"
-    ) -> Tuple[List[Dict], List[UnificationChange]]:
-        """
-        M×N comparison between two files.
-        Use entries from A as canonical.
-        """
-        unified = list(entries_a)  # Start with all from A
-        cross_changes = []
+    ) -> List[Dict]:
+        canonical_from_a = {}
+        for entry in entries_a:
+            inchi = self.extract_inchi(entry)
+            if inchi:
+                canonical_from_a[inchi] = inchi
         
-        for entry_b in entries_b:
-            inchi_b = self.extract_inchi(entry_b)
+        modified_b = []
+        for entry in entries_b:
+            entry_copy = entry.copy()
+            inchi_b = self.extract_inchi(entry_copy)
             
-            if not inchi_b:
-                # No InChI - add as unique
-                unified.append(entry_b)
-                continue
-            
-            matched = False
-            
-            # Compare against all entries in A
-            for i, entry_a in enumerate(unified):
-                inchi_a = self.extract_inchi(entry_a)
+            if inchi_b:
+                matched_canonical = None
+                for inchi_a in canonical_from_a.keys():
+                    if self.inchis_match(inchi_b, inchi_a):
+                        matched_canonical = inchi_a
+                        break
                 
-                if not inchi_a:
-                    continue
-                
-                if self.inchis_match(inchi_b, inchi_a):
-                    merged = self.merge_entries([entry_a, entry_b])
-                    
-                    merged["INCHI"] = inchi_a
-                    
-                    cross_changes.append(UnificationChange(
+                if matched_canonical:
+                    if inchi_b != matched_canonical:
+                        self.changes_log.append(UnificationChange(
                             original_inchi=inchi_b,
-                            canonical_inchi=inchi_a,
-                            source_file=f"{source_b} → {source_a}",
-                            entry_title=entry_b.get("TITLE", entry_b.get("NAME", ""))
-                    ))
+                            canonical_inchi=matched_canonical
+                        ))
                     
-                    unified[i] = merged
-                    matched = True
-                    break
+                    if "INCHI" in entry_copy:
+                        entry_copy["INCHI"] = matched_canonical
+                    elif "SMILES" in entry_copy:
+                        entry_copy["SMILES"] = matched_canonical
             
-            if not matched:
-                unified.append(entry_b)
+            modified_b.append(entry_copy)
         
-        return unified, cross_changes
+        return entries_a + modified_b
     
-    def merge_entries(self, entries: List[Dict]) -> Dict:
-        """
-        Merge multiple MGF entries.
-        Combines metadata; first entry's values take precedence.
-        """
-        if len(entries) == 1:
-            return entries[0].copy()
-        
-        merged = {}
-        
-        all_keys = set()
-        for entry in entries:
-            all_keys.update(entry.keys())
-        
-        for key in all_keys:
-            values = []
-            for entry in entries:
-                if key in entry:
-                    val = entry[key]
-                    if val not in values:
-                        values.append(val)
-            
-            if len(values) == 1:
-                merged[key] = values[0]
-            elif len(values) > 1:
-                if key in ["TITLE", "NAME"]:
-                    merged[key] = " | ".join(str(v) for v in values)
-                else:
-                    merged[key] = values[0]
-        
-        return merged
     
     def write_mgf(self, entries: List[Dict], output_path: str):
-        """Write entries to MGF file"""
         with open(output_path, "w") as f:
             for entry in entries:
                 f.write("BEGIN IONS\n")
+                
                 for key, value in entry.items():
-                    f.write(f"{key}={value}\n")
+                    if key != "_PEAKS":
+                        f.write(f"{key}={value}\n")
+                
+                if "_PEAKS" in entry:
+                    for peak_line in entry["_PEAKS"]:
+                        f.write(f"{peak_line}\n")
+                
                 f.write("END IONS\n\n")
     
     def write_log(self, output_path: str):
-        """Write unification log to file"""
         log_data = {
             "level": self.level,
-            "timestamp": datetime.now().isoformat(),
             "total_changes": len(self.changes_log),
             "changes": [asdict(change) for change in self.changes_log]
         }
@@ -305,15 +247,8 @@ class SimpleMgfDeduplicator:
             json.dump(log_data, f, indent=2)
     
     def process_files(
-        self,
-        file_path_a: str,
-        file_path_b: str,
-        output_mgf: Optional[str] = None,
-        output_log: Optional[str] = None
-    ) -> Dict:
-        """
-        Complete workflow: deduplicate → cross-compare → merge → output.
-        """
+        self,file_path_a: str,file_path_b: str,
+        output_mgf: Optional[str] = None,output_log: Optional[str] = None) -> Dict:
         
         entries_a = self.parse_mgf(file_path_a)
         entries_b = self.parse_mgf(file_path_b)
@@ -321,38 +256,38 @@ class SimpleMgfDeduplicator:
         source_a = Path(file_path_a).name
         source_b = Path(file_path_b).name
         
-        # Step 1: Deduplicate within File A
-        dedup_a, changes_a = self.deduplicate_file(entries_a, source_a)
-        self.changes_log.extend(changes_a)
+        changes_before = len(self.changes_log)
+        entries_a_unified = self.unify_inchis_in_file(entries_a, source_a)
+        changes_a = len(self.changes_log) - changes_before
         
-        # Step 2: Deduplicate within File B
-        dedup_b, changes_b = self.deduplicate_file(entries_b, source_b)
-        self.changes_log.extend(changes_b)
+        changes_before = len(self.changes_log)
+        entries_b_unified = self.unify_inchis_in_file(entries_b, source_b)
+        changes_b = len(self.changes_log) - changes_before
         
-        # Step 3: Cross-deduplicate (M×N)
-        unified, cross_changes = self.cross_deduplicate(
-            dedup_a, dedup_b, source_a, source_b
+        changes_before = len(self.changes_log)
+        all_entries = self.cross_unify(
+            entries_a_unified, entries_b_unified, source_a, source_b
         )
-        self.changes_log.extend(cross_changes)
+        changes_cross = len(self.changes_log) - changes_before
         
-        # Step 4: Write outputs
         if output_mgf:
-            self.write_mgf(unified, output_mgf)
-        
+            self.write_mgf(all_entries, output_mgf)
+
         if output_log:
             self.write_log(output_log)
-        
+            
         return {
             "input_counts": {
                 source_a: len(entries_a),
                 source_b: len(entries_b)
             },
-            "deduplicated_counts": {
-                source_a: len(dedup_a),
-                source_b: len(dedup_b)
-            },
-            "unified_count": len(unified),
+            "output_count": len(all_entries),
             "changes_count": len(self.changes_log),
+            "changes_breakdown": {
+                f"{source_a}_internal": changes_a,
+                f"{source_b}_internal": changes_b,
+                f"{source_b}_to_{source_a}": changes_cross
+            },
             "changes_log": [asdict(change) for change in self.changes_log],
             "level": self.level
         }

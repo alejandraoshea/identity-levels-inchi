@@ -49,6 +49,7 @@ def main():
     mgf_parser = subparsers.add_parser("compare-mgf")
     mgf_parser.add_argument("file1", help="First MGF file")
     mgf_parser.add_argument("file2", help="Second MGF file")
+    mgf_parser.add_argument("--config", default=None)
     mgf_parser.add_argument(
         "--level",
         default="COMPLETE_IDENTITY",
@@ -112,7 +113,9 @@ def main():
         print(json.dumps(result, indent=2))
 
     elif args.command == "compare-mgf":
-        deduplicator = SimpleMgfDeduplicator(level=args.level)
+        config = load_config(args.config)
+        
+        deduplicator = SimpleMgfDeduplicator(level=args.level, config=config)
         
         result = deduplicator.process_files(
             args.file1,
@@ -120,6 +123,11 @@ def main():
             output_mgf=args.output_mgf,
             output_log=args.output_log
         )
+        
+        print(f"\n{'='*60}")
+        print("SUMMARY")
+        print(f"{'='*60}")
+        print(json.dumps(result, indent=2))
 
     else:
         parser.print_help()
