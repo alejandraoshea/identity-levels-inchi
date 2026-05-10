@@ -1,8 +1,9 @@
 import argparse
 import json
+from backend.inchi.compare import compare_text_files, compare_pair, read_file_lines
+from backend.inchi.config_loader import load_config, build_config_from_levels, apply_inchitrust
+from backend.parsers.mgf_parser import SimpleMgfDeduplicator
 
-from backend.inchi.compare import compare_text_files,compare_pair,compare_mgf_files, read_file_lines
-from backend.inchi.config_loader import load_config,build_config_from_levels,apply_inchitrust
 
 def main():
     parser = argparse.ArgumentParser(
@@ -11,67 +12,59 @@ def main():
     )
 
     subparsers = parser.add_subparsers(dest="command")
-
+    
     compare_parser = subparsers.add_parser("compare")
-
     compare_parser.add_argument("file1")
     compare_parser.add_argument("file2")
-
     compare_parser.add_argument(
         "--mode",
         choices=["pairwise", "cross"],
         default="pairwise"
     )
-
     compare_parser.add_argument("--config", default=None)
-
     compare_parser.add_argument(
         "--only-equal",
         action="store_true"
     )
-
     compare_parser.add_argument("--output_file", default=None)
-
     add_inchitrust_arg(compare_parser)
 
     pair_parser = subparsers.add_parser("compare-pair")
-
     pair_parser.add_argument("inchi1")
     pair_parser.add_argument("inchi2")
     pair_parser.add_argument("--config", default=None)
-
     add_inchitrust_arg(pair_parser)
 
     pair_levels_parser = subparsers.add_parser("compare-pair-levels")
-
     pair_levels_parser.add_argument("inchi1")
     pair_levels_parser.add_argument("inchi2")
-
     pair_levels_parser.add_argument(
         "--levels",
         nargs="+",
         required=True
     )
-
     pair_levels_parser.add_argument("--config", default=None)
     add_inchitrust_arg(pair_levels_parser)
 
     mgf_parser = subparsers.add_parser("compare-mgf")
-
-    mgf_parser.add_argument("file1")
-    mgf_parser.add_argument("file2")
-    mgf_parser.add_argument("--config", default=None)
-
-    mgf_parser.add_argument(
-        "--only-equal",
-        action="store_true"
-    )
+    mgf_parser.add_argument("file1", help="First MGF file")
+    mgf_parser.add_argument("file2", help="Second MGF file")
     mgf_parser.add_argument(
         "--level",
-        default="COMPLETE_IDENTITY"
+        default="COMPLETE_IDENTITY",
+        help="Identity level to use (default: COMPLETE_IDENTITY)"
+    )
+    mgf_parser.add_argument(
+        "--output-mgf",
+        default="unified.mgf",
+        help="Output path for unified MGF file (default: unified.mgf)"
+    )
+    mgf_parser.add_argument(
+        "--output-log",
+        default="unification_log.json",
+        help="Output path for unification log (default: unification_log.json)"
     )
 
-    add_inchitrust_arg(mgf_parser)
     args = parser.parse_args()
 
     if args.command == "compare":
@@ -119,18 +112,14 @@ def main():
         print(json.dumps(result, indent=2))
 
     elif args.command == "compare-mgf":
-        config = load_config(args.config)
-        config = apply_inchitrust(config, args.inchitrust)
+        deduplicator = SimpleMgfDeduplicator(level=args.level)
         
-
-        result = compare_mgf_files(
+        result = deduplicator.process_files(
             args.file1,
             args.file2,
-            config,
-            level=args.level
+            output_mgf=args.output_mgf,
+            output_log=args.output_log
         )
-
-        print(json.dumps(result, indent=2))
 
     else:
         parser.print_help()
@@ -142,7 +131,6 @@ def add_inchitrust_arg(parser):
         help="Path to InChI Trust executable",
         default=None
     )
-
 
 if __name__ == "__main__":
     main()
