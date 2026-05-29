@@ -1,3 +1,4 @@
+import sys
 import requests
 from functools import lru_cache
 from rdkit import Chem
@@ -252,9 +253,9 @@ class LipidHeadValidator:
                 if mol_pattern is not None:
                     self.compiled_patterns[pattern_id] = (pattern, mol_pattern)
                 else:
-                    print(f"Warning: Failed to compile pattern '{pattern_id}': {pattern.name}")
+                    print(f"Warning: Failed to compile pattern '{pattern_id}': {pattern.name}", file=sys.stderr)
             except Exception as e:
-                print(f"Error compiling pattern '{pattern_id}': {e}")
+                print(f"Error compiling pattern '{pattern_id}': {e}", file=sys.stderr)
     
     def matches_pattern(self, mol: Chem.Mol, pattern_id: str) -> bool:
         """
@@ -348,10 +349,10 @@ class LipidHeadValidator:
         }
         
         if verbose and matches:
-            print(f"Valid lipid structure detected:")
-            print(f"Class: {result['lipid_class']}")
-            print(f"Pattern: {matches[0].name}")
-            print(f"FA positions: {', '.join(result['fa_positions'])}")
+            print("Valid lipid structure detected:", file=sys.stderr)
+            print(f"Class: {result['lipid_class']}", file=sys.stderr)
+            print(f"Pattern: {matches[0].name}", file=sys.stderr)
+            print(f"FA positions: {', '.join(result['fa_positions'])}", file=sys.stderr)
         
         return result
 

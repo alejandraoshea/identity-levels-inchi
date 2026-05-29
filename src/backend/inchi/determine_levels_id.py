@@ -28,7 +28,7 @@ class InChI:
             
             mol = Chem.inchi.MolFromInchi(inchi.strip(), sanitize=False)
             if mol is None:
-                raise ValueError(f"InChI conversion failed: Internal RDKit/InChI parser rejection")
+                raise ValueError("InChI conversion failed: Internal RDKit/InChI parser rejection")
             return mol
         except Exception as e:
             print(f"RDKit conversion failed for InChI: {inchi}\nError: {e}")
@@ -224,7 +224,6 @@ class InChI:
         mol1 = InChI.remove_cis_trans(mol1)
         mol2 = InChI.remove_cis_trans(mol2)
 
-        # FIX: compare canonical SMILES, not mol objects (== is reference equality in RDKit)
         sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
         sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
         return sig1 == sig2
@@ -343,45 +342,29 @@ class InChI:
             print(f"InChI Trust execution failed: {e}")
             return None
         
-    def areEqualTautomers(inchi1: str, inchi2: str, inchitrust_path: str | None = None) -> bool:
-        # if path not provided, read from environment variable
-        if inchitrust_path is None:
-            inchitrust_path = os.getenv("INCHITRUST_PATH")
-
-        if not inchitrust_path:
-            raise ValueError(
-                "InChI Trust path not provided. Set INCHITRUST_PATH environment variable."
-            )
-
+    def areEqualTautomers(inchi1: str, inchi2: str, inchitrust_path=None) -> bool:
         inchi1 = InChI.normalize_input(inchi1)
         inchi2 = InChI.normalize_input(inchi2)
-
-        # STEP 1: remove isotope layers
         inchi1 = InChIParser.removeIsotopicLayers(inchi1)
         inchi2 = InChIParser.removeIsotopicLayers(inchi2)
 
         mol1 = InChI.mol_from_inchi(inchi1)
         mol2 = InChI.mol_from_inchi(inchi2)
-
         if mol1 is None or mol2 is None:
             return False
 
-        # STEP 2: remove salts
         mol1 = InChI.main_fragment(mol1)
         mol2 = InChI.main_fragment(mol2)
-
-        # STEP 3: neutralize charges
         mol1 = InChI.neutralize_molecule(mol1)
         mol2 = InChI.neutralize_molecule(mol2)
 
-        # STEP 4: generate canonical tautomer
-        taut1 = InChI.run_inchitrust(mol1, inchitrust_path)
-        taut2 = InChI.run_inchitrust(mol2, inchitrust_path)
+        enumerator = rdMolStandardize.TautomerEnumerator()
+        canon1 = enumerator.Canonicalize(mol1)
+        canon2 = enumerator.Canonicalize(mol2)
 
-        if taut1 is None or taut2 is None:
-            return False
-
-        return taut1 == taut2
+        sig1 = Chem.MolToSmiles(canon1, canonical=True, isomericSmiles=False)
+        sig2 = Chem.MolToSmiles(canon2, canonical=True, isomericSmiles=False)
+        return sig1 == sig2
     
     @staticmethod
     def get_substituent_signatures(mol):

@@ -1,11 +1,14 @@
 import argparse
 import json
+import sys
 from backend.inchi.compare import compare_text_files, compare_pair, read_file_lines
 from backend.inchi.config_loader import load_config, build_config_from_levels, apply_inchitrust
 from backend.parsers.mgf_parser import SimpleMgfDeduplicator
 
 
 def main():
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(
         prog="inchi",
         description="Metabolite identity comparison tool"

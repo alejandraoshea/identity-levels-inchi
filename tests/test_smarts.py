@@ -2,10 +2,10 @@
 Tests generated directly from Naming_Example.xlsx
 
 Column mapping (Hoja1):
-  B = positive SMILES          → must match
-  H = error 1 (wrong chain)    → FA placed at wrong position (O instead of N), must NOT match
-  I = variant azúcares         → different/extra sugar, N-acyl intact
-  J = error 3 (stereochemistry)→ wrong stereo on sphingoid base
+  B = positive SMILES          : must match
+  H = error 1 (wrong chain)    : FA placed at wrong position (O instead of N), must NOT match
+  I = variant azúcares         : different/extra sugar, N-acyl intact
+  J = error 3 (stereochemistry): wrong stereo on sphingoid base
 
 Each test class maps to one Excel row.
 Column I (sugar variant) always keeps the correct N-acyl bond, so it is
@@ -13,8 +13,8 @@ expected to still match — it is NOT a negative, just a structural variant.
 Column J (stereo) tests are marked @expectedFailure because current SMARTS
 patterns do not enforce stereochemistry.
 
-Rows with no entry in a column → that test method is omitted.
-Rows whose negatives still contain [G]/[R] placeholders → skipped (invalid SMILES).
+Rows with no entry in a column : that test method is omitted.
+Rows whose negatives still contain [G]/[R] placeholders : skipped (invalid SMILES).
 """
 
 import unittest
@@ -31,9 +31,7 @@ def parse(smiles: str):
     return Chem.MolFromSmiles(smiles.strip())
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 7 — Neutral glycosphingolipid  (Gal-GlcNAc-Gal-GlcNAc-Gal-Glc-Cer)
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx7_NeutralGlycosphingolipid(unittest.TestCase):
     # Col B: correct structure — N-acyl ceramide + oligosaccharide chain
     POS = (
@@ -74,7 +72,7 @@ class TestEx7_NeutralGlycosphingolipid(unittest.TestCase):
                         "Ex7 positive (N-acyl ceramide + sugars) must match")
 
     def test_negative_chain(self):
-        """FA at O instead of N → must NOT match."""
+        """FA at O instead of N : must NOT match."""
         m = parse(self.NEG_CHAIN)
         self.assertIsNotNone(m, "Col H SMILES invalid")
         self.assertFalse(self.v.matches_any_valid_head(m),
@@ -89,13 +87,11 @@ class TestEx7_NeutralGlycosphingolipid(unittest.TestCase):
                          "Ex7 stereo-error should NOT match once stereo patterns added")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 60 — Acidic glycosphingolipid  (glucuronic acid headgroup)
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx60_AcidicGlycosphingolipid(unittest.TestCase):
     POS       = "[H][C@](NC(CCCCCCCCCCCCC)=O)(CO[C@H]1O[C@H](C(O)=O)[C@H](O)[C@H](O)[C@H]1O)[C@@](O)([H])CCCCCCCCCCCCCCC"
     NEG_CHAIN = "[H][C@](N)(CO[C@H]1O[C@H](C(O)=O)[C@H](O)[C@H](O)[C@H]1O)[C@@](OC(CCCCCCCCCCCCC)=O)([H])CCCCCCCCCCCCCCC"
-    # Col I: extended sugar (still has N-acyl) → should still match
+    # Col I: extended sugar (still has N-acyl) : should still match
     VAR_SUGAR = "[H][C@](NC(CCCCCCCCCCCCC)=O)(CO[C@H]1O[C@H](C(O)=O)[C@@H](O[C@H]2O[C@H](CO[C@H]3O[C@H](CO)[C@H](O)[C@H](O)[C@H]3O)[C@@H](O)[C@H](O)[C@H]2N)[C@H](O)[C@H]1O)[C@@](O)([H])CCCCCCCCCCCCCCC"
     NEG_STEREO= "[H][C@](NC(CCCCCCCCCCCCC)=O)(CO[C@H]1O[C@H](C(O)=O)[C@H](O)[C@H](O)[C@H]1O)C(O)([H])CCCCCCCCCCCCCCC"
 
@@ -126,9 +122,7 @@ class TestEx60_AcidicGlycosphingolipid(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 64 — Phosphosphingolipid / Sphingomyelin
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx64_Sphingomyelin(unittest.TestCase):
     POS        = "[H][C@](NC(CCCCCCCCCCCCCCCCCCC)=O)(COP(OCC[N+](C)(C)C)([O-])=O)[C@@](O)([H])CCCCCCCCCCCCCCC"
     NEG_CHAIN  = "[H][C@](N)(COP(OCC[N+](C)(C)C)([O-])=O)[C@@](OC(CCCCCCCCCCCCCCCCCCC)=O)([H])CCCCCCCCCCCCCCC"
@@ -154,9 +148,7 @@ class TestEx64_Sphingomyelin(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 65 — Ceramide phosphoethanolamine
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx65_CeramidePhosphoethanolamine(unittest.TestCase):
     POS        = "[H][C@](NC(CCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(OCCN)(O)=O)[C@@](O)([H])/C=C/CCCCCCCCCCC"
     NEG_CHAIN  = "[H][C@](N)(COP(OCCN)(O)=O)[C@@](OC(CCCCCCCCCCCCCCCCCCCCCCC)=O)([H])/C=C/CCCCCCCCCCC"
@@ -182,9 +174,7 @@ class TestEx65_CeramidePhosphoethanolamine(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 66 — Ceramide phosphoinositol
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx66_CeramidePhosphoinositol(unittest.TestCase):
     POS        = "[H][C@](NC(C(O)CCCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O)(O)=O)[C@@](O)([H])CCCCCCCCCCCCCCCCC"
     NEG_CHAIN  = "[H][C@](N)(COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O)(O)=O)[C@@](OC(C(O)CCCCCCCCCCCCCCCCCCCCCCCC)=O)([H])CCCCCCCCCCCCCCCCC"
@@ -219,9 +209,7 @@ class TestEx66_CeramidePhosphoinositol(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 67 — Acidic glycosphingolipid / Sulfatide
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx67_Sulfatide(unittest.TestCase):
     POS        = "[H][C@](NC(CCCCCCCCCCCCC/C=C\\CCCCCCCC)=O)(CO[C@@H]1O[C@H](CO)[C@H](O)[C@H](OS(=O)(O)=O)[C@H]1O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC"
     NEG_CHAIN  = "[H][C@](N)(CO[C@@H]1O[C@H](CO)[C@H](O)[C@H](OS(=O)(O)=O)[C@H]1O)[C@@](OC(CCCCCCCCCCCCC/C=C\\CCCCCCCC)=O)([H])/C=C/CCCCCCCCCCCCC"
@@ -256,9 +244,7 @@ class TestEx67_Sulfatide(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 69 — Ceramide phospho-inositol-glucosamine
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx69_CeramidePhosphoInositolGlcN(unittest.TestCase):
     POS        = "CCCCCCCCCCCCCC[C@@]([H])(O)[C@](O)([H])[C@](NC(CCCCCCCCCCCCCCCCCCCCCCCCC)=O)([H])COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2N)(O)=O"
     NEG_CHAIN  = "CCCCCCCCCCCCCC[C@@]([H])(O)[C@](OC(CCCCCCCCCCCCCCCCCCCCCCCCC)=O)([H])[C@](N)([H])COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O[C@@H]2O[C@H](CO)[C@@H](O)[C@H](O)[C@H]2N)(O)=O"
@@ -292,9 +278,7 @@ class TestEx69_CeramidePhosphoInositolGlcN(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 70 — Glycerolipid / Triacylglycerol
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx70_Triacylglycerol(unittest.TestCase):
     POS        = "O=C(CCCCCCCCCCC)OC[C@@]([H])(OC(CCCCCCCCCCCCCCC)=O)COC(CCCCCCCCCCCCCCCCC)=O"
     NEG_STEREO = "O=C(CCCCCCCCCCC)OCC([H])(OC(CCCCCCCCCCCCCCC)=O)COC(CCCCCCCCCCCCCCCCC)=O"
@@ -317,9 +301,7 @@ class TestEx70_Triacylglycerol(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 2 — Glycerolipid / 1,2-Diacylglycerol (polyunsaturated)
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx2_Diacylglycerol(unittest.TestCase):
     POS        = "OC[C@]([H])(OC(CCCCCCC/C=C\\C/C=C\\C/C=C\\CC)=O)COC(CCCCCCC/C=C\\C/C=C\\CCCC)=O"
     NEG_STEREO = "OCC([H])(OC(CCCCCCC/C=C\\C/C=C\\C/C=C\\CC)=O)COC(CCCCCCC/C=C\\C/C=C\\CCCC)=O"
@@ -338,9 +320,7 @@ class TestEx2_Diacylglycerol(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 75 — Other sphingolipid (sulfonyl headgroup)
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx75_SulfonylSphingolipid(unittest.TestCase):
     POS        = "CC(C)CCCCCCCCCCC[C@](O)([H])[C@](NC(C[C@@H](O)CCCCCCCCCCCC(C)C)=O)([H])CS(O)(=O)=O"
     NEG_CHAIN  = "N[C@@]([C@@](OC(C[C@@H](O)CCCCCCCCCCCC(C)C)=O)([H])CCCCCCCCCCCC(C)C)([H])CS(O)(=O)=O"
@@ -366,9 +346,7 @@ class TestEx75_SulfonylSphingolipid(unittest.TestCase):
         self.assertFalse(self.v.matches_any_valid_head(m))
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 76 — Other sphingolipid (phospho-mannoside)
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx76_PhosphoMannoside(unittest.TestCase):
     POS        = "OP(OCC(NC(CCCCCCCCCCCC(C)C)=O)C(O)CCCCCCCCCCCC(C)C)(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O)=O"
     NEG_CHAIN  = "NC(COP(O)(O[C@@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O)=O)C(OC(CCCCCCCCCCCC(C)C)=O)CCCCCCCCCCCC(C)C"
@@ -395,9 +373,7 @@ class TestEx76_PhosphoMannoside(unittest.TestCase):
                         "Ex76 sugar-variant (N-acyl intact) must still match")
 
 
-# ──────────────────────────────────────────────────────────────────────────────
 # Example 79 — Ceramide-1-phosphate
-# ──────────────────────────────────────────────────────────────────────────────
 class TestEx79_Ceramide1Phosphate(unittest.TestCase):
     POS        = "[H][C@](NC(CCCCCCCCCCCCCCCCCCCCC)=O)(COP(O)(O)=O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC"
     NEG_CHAIN  = "[H][C@](N)(COP(O)(O)=O)[C@@](OC(CCCCCCCCCCCCCCCCCCCCC)=O)([H])/C=C/CCCCCCCCCCCCC"
