@@ -9,7 +9,6 @@ load_dotenv()
 
 inchi_comparison_routes = Blueprint("inchi_comparison_routes", __name__)
 
-
 @inchi_comparison_routes.route("/api/compare_inchis", methods=["POST"])
 def compare_inchis():
     try:

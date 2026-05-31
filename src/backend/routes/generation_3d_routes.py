@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.Draw import rdMolDraw2D
+from backend.inchi.smiles_pattern import SmilesCorrector 
 from dotenv import load_dotenv
 import base64, asyncio, io, traceback
 from PIL import Image
@@ -25,7 +26,10 @@ def normalize_to_inchi(input_str: str) -> str:
         return input_str
     
     try:
-        mol = Chem.MolFromSmiles(input_str)
+        correction = SmilesCorrector.auto_correct(input_str, verbose=False)
+        corrected_smiles = correction["corrected"]
+        
+        mol = Chem.MolFromSmiles(corrected_smiles)
         if mol is None:
             raise ValueError(f"Invalid SMILES: {input_str}")
         

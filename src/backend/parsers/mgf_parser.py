@@ -6,6 +6,7 @@ from dataclasses import dataclass, asdict
 from backend.inchi.determine_levels_id import InChI
 from backend.inchi.inchi_layers_enum import InchiLayers
 from backend.inchi.inchi_parser import InChIParser
+from backend.inchi.smiles_pattern import SmilesCorrector 
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.MolStandardize import rdMolStandardize
@@ -140,6 +141,12 @@ class SimpleMgfDeduplicator:
         inchi = inchi.strip()
 
         if not inchi.startswith("InChI="):
+            correction = SmilesCorrector.auto_correct(inchi, verbose=False)
+            if correction["parse_result"] == "error":
+                return inchi
+            inchi = correction["corrected"]
+
+        if not inchi.startswith("InChI="):
             try:
                 mol = Chem.MolFromSmiles(inchi)
                 if mol:
@@ -168,7 +175,7 @@ class SimpleMgfDeduplicator:
                 remover = SaltRemover()
                 mol_clean = remover.StripMol(mol, dontRemoveEverything=True)
                 mol_main = InChI.main_fragment(mol_clean)
-
+                
                 return Chem.MolToInchi(mol_main)
 
             if self.level == "CHARGES_INDEPENDENCE":
@@ -261,6 +268,10 @@ class SimpleMgfDeduplicator:
         }
 
         if structure_type == "SMILES":
+            correction = SmilesCorrector.auto_correct(structure, verbose=False)
+            if correction["parse_result"] != "error":
+                structure = correction["corrected"]
+            
             mol = Chem.MolFromSmiles(structure)
             if mol:
                 steps["smiles_to_inchi"] = Chem.MolToInchi(mol)
