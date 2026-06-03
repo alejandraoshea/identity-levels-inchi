@@ -322,28 +322,41 @@ button.secondary:hover {
 
 .molecule {
     flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
+    min-height: 200px;
+    max-height: 360px;
     position: relative;
-    align-items: center;
-    justify-content: center;
     background: white;
     overflow: hidden;
-    padding: 8px;
+    padding: 0;
     width: 100%;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.molecule img {
+.mol-cell {
+    height: 220px;
+    min-height: 220px;
+    max-height: 220px;
+    overflow: hidden;
+    padding: 0;
+}
+
+.molecule img,
+.mol-cell img {
     width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
-    flex: 1;
-    min-height: 0;
 }
 
+.molecule svg,
+.mol-cell svg {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
 .molecule-row {
     display: flex;
     gap: 10px;
