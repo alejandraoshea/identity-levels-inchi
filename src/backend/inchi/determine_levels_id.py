@@ -335,7 +335,6 @@ class InChI:
 
         return False
     
-   
     def run_inchitrust(mol, inchitrust_path):
         try:
             molblock = Chem.MolToMolBlock(mol)
@@ -377,72 +376,6 @@ class InChI:
         sig1 = Chem.MolToSmiles(canon1, canonical=True, isomericSmiles=False)
         sig2 = Chem.MolToSmiles(canon2, canonical=True, isomericSmiles=False)
         return sig1 == sig2
-    
-    @staticmethod
-    def get_substituent_signatures(mol):
-        mol = InChI.main_fragment(mol)
-        scaffold = MurckoScaffold.GetScaffoldForMol(mol)
-
-        # detect molecules with no Murcko scaffold (e.g. lipids)
-        use_scaffold = scaffold.GetNumAtoms() < mol.GetNumAtoms()
-
-        if use_scaffold:
-            scaffold_smiles = Chem.MolToSmiles(
-                scaffold,
-                canonical=True,
-                isomericSmiles=False
-            )
-            scaffold_atoms = {a.GetIdx() for a in scaffold.GetAtoms()}
-        else:
-            # no scaffold - treat whole molecule as substituent space
-            scaffold_smiles = "NO_SCAFFOLD"
-            scaffold_atoms = set()
-
-        visited = set()
-        substituents = []
-
-        for atom in mol.GetAtoms():
-            idx = atom.GetIdx()
-            if idx in scaffold_atoms or idx in visited:
-                continue
-
-            stack = [idx]
-            frag_atoms = set()
-
-            while stack:
-                current = stack.pop()
-                if current in visited:
-                    continue
-
-                visited.add(current)
-                frag_atoms.add(current)
-                atom_obj = mol.GetAtomWithIdx(current)
-
-                for nbr in atom_obj.GetNeighbors():
-                    nbr_idx = nbr.GetIdx()
-                    if nbr_idx not in scaffold_atoms and nbr_idx not in visited:
-                        stack.append(nbr_idx)
-
-            if frag_atoms:
-                smiles = Chem.MolFragmentToSmiles(
-                    mol,
-                    atomsToUse=list(frag_atoms),
-                    canonical=True,
-                    isomericSmiles=False
-                )
-                substituents.append(smiles)
-
-        return scaffold_smiles, Counter(substituents)
-    
-    @staticmethod
-    def substituent_position_independent_signature(inchi: str):
-        mol = InChI.mol_from_inchi(inchi)
-
-        if mol is None:
-            return None
-
-        scaffold, subs = InChI.get_substituent_signatures(mol)
-        return (scaffold, subs)
     
 
     @staticmethod
@@ -521,8 +454,8 @@ class InChI:
             return False
 
         # CASE 2: both are not lipids
-        sig1 = InChI.substituent_position_independent_signature(inchi1)
-        sig2 = InChI.substituent_position_independent_signature(inchi2)
+        sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
+        sig2 = Chem.MolToSmiles(mol2, canonical=True, isomericSmiles=False)
 
         return sig1 == sig2
 
