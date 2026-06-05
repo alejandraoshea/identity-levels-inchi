@@ -28,7 +28,7 @@ def validate_inchitrust_path(path):
 
     return path
 
-def build_config_from_levels(selected_levels, base_config):
+def build_config_from_layers(selected_layers, base_config):
     import copy
     config = copy.deepcopy(base_config)
 
@@ -47,7 +47,7 @@ def build_config_from_levels(selected_levels, base_config):
         "tautomer": ("tautomer_independence", "tautomer_independent_identity"),
     }
 
-    for lvl in selected_levels:
+    for lvl in selected_layers:
         if lvl in mapping:
             section, key = mapping[lvl]
             config["identity_criteria"][section][key] = True

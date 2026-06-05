@@ -2,7 +2,7 @@ import argparse
 import json
 import sys
 from backend.inchi.compare import compare_text_files, compare_pair, read_file_lines
-from backend.inchi.config_loader import load_config, build_config_from_levels, apply_inchitrust
+from backend.inchi.config_loader import load_config, build_config_from_layers, apply_inchitrust
 from backend.parsers.mgf_parser import SimpleMgfDeduplicator
 
 
@@ -38,25 +38,25 @@ def main():
     pair_parser.add_argument("--config", default=None)
     add_inchitrust_arg(pair_parser)
 
-    pair_levels_parser = subparsers.add_parser("compare-pair-levels")
-    pair_levels_parser.add_argument("inchi1")
-    pair_levels_parser.add_argument("inchi2")
-    pair_levels_parser.add_argument(
-        "--levels",
+    pair_layers_parser = subparsers.add_parser("compare-pair-layers")
+    pair_layers_parser.add_argument("inchi1")
+    pair_layers_parser.add_argument("inchi2")
+    pair_layers_parser.add_argument(
+        "--layers",
         nargs="+",
         required=True
     )
-    pair_levels_parser.add_argument("--config", default=None)
-    add_inchitrust_arg(pair_levels_parser)
+    pair_layers_parser.add_argument("--config", default=None)
+    add_inchitrust_arg(pair_layers_parser)
 
     mgf_parser = subparsers.add_parser("compare-mgf")
     mgf_parser.add_argument("file1", help="First MGF file")
     mgf_parser.add_argument("file2", help="Second MGF file")
     mgf_parser.add_argument("--config", default=None)
     mgf_parser.add_argument(
-        "--level",
+        "--layer",
         default="COMPLETE_IDENTITY",
-        help="Identity level to use (default: COMPLETE_IDENTITY)"
+        help="Identity layer to use (default: COMPLETE_IDENTITY)"
     )
     mgf_parser.add_argument(
         "--output-mgf",
@@ -98,12 +98,12 @@ def main():
 
         print(json.dumps(result, indent=2))
 
-    elif args.command == "compare-pair-levels":
+    elif args.command == "compare-pair-layers":
         base_config = load_config(args.config)
         base_config = apply_inchitrust(base_config, args.inchitrust)
 
-        config = build_config_from_levels(
-            args.levels,
+        config = build_config_from_layers(
+            args.layers,
             base_config
         )
 
@@ -118,7 +118,7 @@ def main():
     elif args.command == "compare-mgf":
         config = load_config(args.config)
         
-        deduplicator = SimpleMgfDeduplicator(level=args.level, config=config)
+        deduplicator = SimpleMgfDeduplicator(layer=args.layer, config=config)
         
         result = deduplicator.process_files(
             args.file1,

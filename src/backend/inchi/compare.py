@@ -112,11 +112,11 @@ def compare_mgf_files(
     file1: str,
     file2: str,
     config: dict,
-    level: str = "COMPLETE_IDENTITY",
+    layer: str = "COMPLETE_IDENTITY",
     output_mgf: Optional[str] = None,
     output_log: Optional[str] = None
 ) -> Dict:
-    deduplicator = SimpleMgfDeduplicator(level=level, config=config)
+    deduplicator = SimpleMgfDeduplicator(layer=layer, config=config)
     
     return deduplicator.process_files(
         file1,

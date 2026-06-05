@@ -1,14 +1,14 @@
-# 🧪 InChI Multi-Level Comparison Tool
+# 🧪 InChI Multi-Layer Comparison Tool
 
 A cheminformatics framework for **advanced comparison of chemical compounds** using hierarchical normalization of InChI representations.
 
-This tool goes beyond exact string matching by evaluating molecular identity across multiple chemically meaningful levels, making it especially useful for **metabolomics, lipidomics, and chemical database integration**.
+This tool goes beyond exact string matching by evaluating molecular identity across multiple chemically meaningful layers, making it especially useful for **metabolomics, lipidomics, and chemical database integration**.
 
 ---
 
 ## Features
 
-- Multi-level molecular comparison
+- Multi-layer molecular comparison
 - Intelligent normalization pipeline:
   - isotope removal
   - salt stripping
@@ -22,7 +22,7 @@ This tool goes beyond exact string matching by evaluating molecular identity acr
 
 ---
 
-## Comparison Levels
+## Comparison Layers
 
 - Complete Identity
 - Isotope Independence
@@ -69,7 +69,7 @@ inchi --help
 ```
 
 ### Requirements
-1. Download InChI Trust (Required for Tautomer Level)
+1. Download InChI Trust (Required for Tautomer Layer)
 - Download from: https://www.inchi-trust.org/downloads/
 Then either:
 - Option A: Add to PATH:
@@ -88,9 +88,9 @@ Then either:
 inchi compare-pair "InChI=1S/C5H11NO2/c1-6(2,3)4-5(7)8/h4H2,1-3H3/p+1" "InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h8-9H,2-7,10-17H2,1H3,(H,19,20)/b9-8+" > src/backend/output/result1.json
 ```
 
-2. Compare two InChIs with selected levels
+2. Compare two InChIs with selected layers
 ```bash
-inchi compare-pair-levels "InChI=1S/C5H11NO2/c1-6(2,3)4-5(7)8/h4H2,1-3H3/p+1" "InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h8-9H,2-7,10-17H2,1H3,(H,19,20)/b9-8+" --levels isotope salt charge > src/backend/output/result2.json
+inchi compare-pair-layers "InChI=1S/C5H11NO2/c1-6(2,3)4-5(7)8/h4H2,1-3H3/p+1" "InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h8-9H,2-7,10-17H2,1H3,(H,19,20)/b9-8+" --layers isotope salt charge > src/backend/output/result2.json
 ```
 
 3. Compare two text files (pairwise)
@@ -111,20 +111,20 @@ inchi compare file1.txt file2.txt --mode cross --only-equal > src/backend/output
 
 6. Compare two mgf files
 ```bash
-inchi compare-mgf test_file1.mgf test_file2.mgf --level COMPLETE_IDENTITY
+inchi compare-mgf test_file1.mgf test_file2.mgf --layer COMPLETE_IDENTITY
 ```
-The user can select the level of identity, and if not specified, the default level is COMPLETE_IDENTITY. In addition, --output-mgf is used to specify the name of the output file and --output-log for the name of the log file.
+The user can select the layer of identity, and if not specified, the default layer is COMPLETE_IDENTITY. In addition, --output-mgf is used to specify the name of the output file and --output-log for the name of the log file.
 
 Case 1: InChI 
 ```bash
-inchi compare-mgf test_file1.mgf test_file2.mgf --level COMPLETE_IDENTITY --output-mgf unified.mgf --output-log unified_log.json
-inchi compare-mgf test_protonation_file1.mgf test_protonation_file2.mgf --level CHARGES_INDEPENDENCE --output-mgf unified.mgf --output-log unified_log.json
+inchi compare-mgf test_file1.mgf test_file2.mgf --layer COMPLETE_IDENTITY --output-mgf unified.mgf --output-log unified_log.json
+inchi compare-mgf test_protonation_file1.mgf test_protonation_file2.mgf --layer CHARGES_INDEPENDENCE --output-mgf unified.mgf --output-log unified_log.json
 ```
 
 Case 2: SMILES
 ```bash
-inchi compare-mgf test_smiles_file1.mgf test_smiles_file2.mgf --level COMPLETE_IDENTITY --output-mgf unified_smiles.mgf --output-log unified_log_smiles.json                   
-inchi compare-mgf test_smiles_file1.mgf test_smiles_file2.mgf --level CHARGES_INDEPENDENCE --output-mgf unified_smiles_charges.mgf --output-log unified_log_smiles_charges.json
+inchi compare-mgf test_smiles_file1.mgf test_smiles_file2.mgf --layer COMPLETE_IDENTITY --output-mgf unified_smiles.mgf --output-log unified_log_smiles.json                   
+inchi compare-mgf test_smiles_file1.mgf test_smiles_file2.mgf --layer CHARGES_INDEPENDENCE --output-mgf unified_smiles_charges.mgf --output-log unified_log_smiles_charges.json
 ```
 
 
