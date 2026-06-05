@@ -75,21 +75,7 @@ class PatternGenerator:
 
     @staticmethod
     def generate_patterns(templates: Dict, sugars: Dict[str, str]) -> Dict[str, HeadgroupPattern]:
-        """
-        Generate all pattern combinations: templates x sugars.
-
-        Substitution strategy:
-          [G] (first occurrence) → specific sugar SMARTS
-          [G] (remaining)        → [#6]  (generic carbon — O-glycoside links
-                                           to further sugars in the chain)
-          [R]                    → [#6]  (generic carbon — FA chain attachment
-                                           point; marks N-acyl or O-acyl site)
-
-        NOTE: [G] and [R] are NOT valid SMARTS atom queries ([G] has no element
-        symbol; [R] means "ring atom"). The original templates used them as
-        SMILES-style placeholders. This substitution makes the generated SMARTS
-        valid and compilable while preserving the headgroup topology.
-        """
+        #Generate all pattern combinations: templates x sugars.
         patterns = {}
         for template_id, template_info in templates.items():
             template_smarts = template_info["smarts"]
