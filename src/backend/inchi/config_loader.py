@@ -45,7 +45,6 @@ def build_config_from_levels(selected_levels, base_config):
         "double_bond": ("isomer_independence", "double_bond_position_independent_identity"),
         "stereo_cis_trans": ("isomer_independence", "cis_trans_independent_identity"),
         "tautomer": ("tautomer_independence", "tautomer_independent_identity"),
-        "substituent": ("tautomer_independence", "substituent_position_independent_identity"),
     }
 
     for lvl in selected_levels:

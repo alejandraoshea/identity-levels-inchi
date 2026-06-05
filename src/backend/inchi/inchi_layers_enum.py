@@ -8,4 +8,3 @@ class InchiLayers(Enum):
     DOUBLE_BONDS_INDEPENDENCE = "double_bond_position_independent"
     STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE = "cis_trans_independent" 
     TAUTOMER_INDEPENDENCE = "tautomer_independent"
-    SUBSTITUENT_POSITION_INDEPENDENCE = "substituent_position_independent"

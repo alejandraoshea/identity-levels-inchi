@@ -511,10 +511,4 @@ class InChI:
                 InChI.areEqualTautomers(inchi1, inchi2, inchitrust_path)
             )
 
-        # SUBSTITUENT POSITION INDEPENDENCE
-        if tautomer_cfg.get("substituent_position_independent_identity", False):
-            results[InchiLayers.SUBSTITUENT_POSITION_INDEPENDENCE] = (
-                InChI.areEqualSubstituentIndependent(inchi1, inchi2)
-            )
-
         return results

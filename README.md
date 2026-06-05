@@ -31,7 +31,6 @@ This tool goes beyond exact string matching by evaluating molecular identity acr
 - Stereochemistry Independence
 - Double Bond Position Independence
 - Tautomer Independence (via InChI Trust)
-- Substituent Position Independence
 
 ---
 
@@ -148,10 +147,8 @@ InChI=1S/C18H34O2/c1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18(19)20/h8-9H,2-7,
             "DOUBLE_BONDS_INDEPENDENCE": false,
             "STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE": false,
             "TAUTOMER_INDEPENDENCE": true,
-            "SUBSTITUENT_POSITION_INDEPENDENCE": false
         }
     }
-
 ```
 
 ### Author

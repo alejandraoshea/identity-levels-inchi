@@ -8,7 +8,6 @@ var layerLabels = {
     double_bond:       "Double Bond Independence",
     stereo_cis_trans:  "Cis/Trans Independence",
     tautomer:          "Tautomer Independence",
-    substituent:       "Substituent Independence"
 };
 
 function compare(isAdvanced) {
@@ -81,7 +80,6 @@ function mapResults(raw) {
         stereo_cis_trans:  raw.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE    != null ? raw.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE    : null,
         double_bond:       raw.DOUBLE_BONDS_INDEPENDENCE                != null ? raw.DOUBLE_BONDS_INDEPENDENCE                : null,
         tautomer:          raw.TAUTOMER_INDEPENDENCE                    != null ? raw.TAUTOMER_INDEPENDENCE                    : null,
-        substituent:       raw.SUBSTITUENT_POSITION_INDEPENDENCE        != null ? raw.SUBSTITUENT_POSITION_INDEPENDENCE        : null
     };
 }
 
