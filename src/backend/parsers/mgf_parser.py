@@ -90,7 +90,6 @@ class SimpleMgfDeduplicator:
             "DOUBLE_BONDS_INDEPENDENCE": InchiLayers.DOUBLE_BONDS_INDEPENDENCE,
             "STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE": InchiLayers.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE,
             "TAUTOMER_INDEPENDENCE": InchiLayers.TAUTOMER_INDEPENDENCE,
-            "SUBSTITUENT_POSITION_INDEPENDENCE": InchiLayers.SUBSTITUENT_POSITION_INDEPENDENCE
         }
 
     def parse_mgf(self, file_path: str) -> List[Dict]:
@@ -227,20 +226,6 @@ class SimpleMgfDeduplicator:
                 return Chem.MolToInchi(mol)
 
             if self.level == "TAUTOMER_INDEPENDENCE":
-                inchi = InChIParser.removeIsotopicLayers(inchi)
-                mol = InChI.mol_from_inchi(inchi)
-                if mol is None:
-                    return inchi
-
-                mol = InChI.main_fragment(mol)
-                mol = InChI.neutralize_molecule(mol)
-                mol = InChI.remove_cis_trans(mol)
-                tautomer_enumerator = rdMolStandardize.TautomerEnumerator()
-                mol = tautomer_enumerator.Canonicalize(mol)
-
-                return Chem.MolToInchi(mol)
-
-            if self.level == "SUBSTITUENT_POSITION_INDEPENDENCE":
                 inchi = InChIParser.removeIsotopicLayers(inchi)
                 mol = InChI.mol_from_inchi(inchi)
                 if mol is None:

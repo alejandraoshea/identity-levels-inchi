@@ -127,9 +127,6 @@ def main():
             output_log=args.output_log
         )
         
-        print(f"\n{'='*60}")
-        print("SUMMARY")
-        print(f"{'='*60}")
         print(json.dumps(result, indent=2))
 
     else:

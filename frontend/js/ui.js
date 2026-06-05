@@ -34,4 +34,6 @@ function markActiveNav() {
     document.querySelectorAll(".nav a, .dropdown-menu a").forEach(function(a) {
         a.classList.toggle("active", a.getAttribute("href") === page);
     });
+    var FILE_PAGES = ["text_files.html", "mgf_files.html"];
+    document.body.classList.toggle("allow-scroll", FILE_PAGES.indexOf(page) !== -1);
 }

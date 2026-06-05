@@ -162,7 +162,10 @@ function initTextareas() {
 }
 
 function markActiveNav() {
+    // Files pages need body scroll; compare/advanced fit in the viewport
+    var FILES_PAGES = ["files.html", "files-pairwise.html", "files-cross.html"];
     var page = location.pathname.split("/").pop();
+    document.body.classList.toggle("allow-scroll", FILES_PAGES.indexOf(page) !== -1);
     document.querySelectorAll(".nav a, .dropdown-menu a").forEach(function(a) {
         a.classList.toggle("active", a.getAttribute("href") === page);
     });
