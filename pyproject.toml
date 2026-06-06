@@ -1,25 +1,19 @@
 [project]
-name = "identity-levels-inchi"
+name = "inchi-identity"
 version = "0.1.0"
-description = "InChI identity comparison across multiple chemical abstraction levels"
+description = "Hierarchical molecular identity comparison framework for untargeted metabolomics"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [
+    { name = "Alejandra O'Shea", email = "alejandraosheafdez@gmail.com" }
+]
 
 dependencies = [
     "numpy",
     "pandas",
     "requests",
-    "flask",
-    "flask-cors",
+    "openpyxl",
     "python-dotenv",
-    "pillow",
-    "py3Dmol",
-    "playwright",
-    "selenium"
-]
-
-authors = [
-    { name = "alejandraoshea", email = "alejandraosheafdez@gmail.com" }
 ]
 
 [project.scripts]

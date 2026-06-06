@@ -1,23 +1,16 @@
-name: id-levels
+name: inchi-identity
 
 channels:
   - conda-forge
-  - bioconda
 
 dependencies:
   - python=3.12
-  - rdkit=2025.9.1
+  - rdkit
   - numpy
   - pandas
-  - pyopenms>=3.4.0
-  - flask
-  - flask-cors
   - requests
+  - openpyxl
   - python-dotenv
-  - pillow
   - pip
   - pip:
-      - py3Dmol
       - pytest
-      - playwright
-      - selenium
