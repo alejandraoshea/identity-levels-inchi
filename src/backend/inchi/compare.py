@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 from backend.inchi.determine_levels_id import InChI
-from backend.inchi.smiles_pattern import SmilesCorrector  # ← NEW
-from backend.parsers.mgf_parser import MgfParser, SimpleMgfDeduplicator
+from backend.inchi.smiles_pattern import SmilesCorrector 
+from backend.inchi.mgf_parser import SimpleMgfDeduplicator
 from typing import Dict, Optional
 
 
