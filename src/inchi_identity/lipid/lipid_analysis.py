@@ -1,6 +1,4 @@
 import sys
-import requests
-from functools import lru_cache
 from rdkit import Chem
 from rdkit.Chem import MolToSmiles
 from rdkit.Chem import inchi as rdInchi
@@ -486,8 +484,7 @@ class LipidHeadValidator:
         return LipidHeadValidator().matches_any_valid_head(mol)
 
 class LipidAnalysis:
-    CLASSYFIRE_URL = "https://classyfire.wishartlab.com/entities.json"
-    MIN_TAIL_CARBONS = 6
+    MIN_TAIL_CARBONS = 2
 
     HEAD_ANCHORS = {
         "carboxyl":             Chem.MolFromSmarts("C(=O)[O;H,-]"),
@@ -533,34 +530,11 @@ class LipidAnalysis:
         return False
 
     @staticmethod
-    @lru_cache(maxsize=10000)
-    def is_lipid_classyfire(inchi: str) -> bool:
-        try:
-            response = requests.get(
-                LipidAnalysis.CLASSYFIRE_URL, params={"inchi": inchi}, timeout=5
-            )
-            if response.status_code != 200:
-                return False
-            data = response.json()
-            if not data:
-                return False
-            entry = data[0]
-            for field in ["kingdom", "superclass", "class", "subclass"]:
-                name = entry.get(field, {}).get("name", "")
-                if name and "lipid" in name.lower():
-                    return True
-            return False
-        except Exception:
-            return False
-
-    @staticmethod
-    def is_lipid(inchi: str, mol=None, use_classyfire=True) -> bool:
+    def is_lipid(inchi: str, mol=None) -> bool:
         if mol is None:
             mol = Chem.MolFromInchi(inchi)
             if mol is None:
                 return False
-        if use_classyfire and LipidAnalysis.is_lipid_classyfire(inchi):
-            return True
         return LipidAnalysis.is_lipid_rdkit(mol)
 
     @staticmethod

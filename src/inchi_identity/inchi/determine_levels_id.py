@@ -291,6 +291,81 @@ class InChI:
         Chem.AssignStereochemistry(mol, cleanIt=True, force=True)
         return mol
     
+    @staticmethod
+    def areEqualIsomerSubLevels(inchi1: str, inchi2: str) -> dict:
+        """Returns individual boolean results for isomer independence sub-levels A-D.
+        A: Cis/Trans independence (all molecules)
+        B: sn-Position independence (lipids only, else None)
+        C: Intra-Chain position independence (lipids only, else None)
+        D: Sum composition (lipids only, else None)
+        Levels are cumulative: if B matches, C and D are also True."""
+        if inchi1 == inchi2:
+            return {"A": True, "B": True, "C": True, "D": True}
+
+        inchi1 = InChI.normalize_input(inchi1)
+        inchi2 = InChI.normalize_input(inchi2)
+
+        inchi1 = InChIParser.removeIsotopicLayers(inchi1)
+        inchi2 = InChIParser.removeIsotopicLayers(inchi2)
+
+        mol1 = InChI.mol_from_inchi(inchi1)
+        mol2 = InChI.mol_from_inchi(inchi2)
+
+        if mol1 is None or mol2 is None:
+            return {"A": False, "B": None, "C": None, "D": None}
+
+        mol1 = InChI.main_fragment(mol1)
+        mol2 = InChI.main_fragment(mol2)
+
+        mol1 = InChI.neutralize_molecule(mol1)
+        mol2 = InChI.neutralize_molecule(mol2)
+
+        # Level A: Cis/Trans independence (applies to all molecules)
+        mol1_a = InChI.remove_cis_trans(mol1)
+        mol2_a = InChI.remove_cis_trans(mol2)
+        sig1_a = MolToSmiles(mol1_a, canonical=True, isomericSmiles=False)
+        sig2_a = MolToSmiles(mol2_a, canonical=True, isomericSmiles=False)
+        level_a = (sig1_a == sig2_a)
+
+        if level_a:
+            return {"A": True, "B": True, "C": True, "D": True}
+
+        # Levels B/C/D only apply to lipids
+        if not (LipidAnalysis.is_lipid(inchi1, mol1) and
+                LipidAnalysis.is_lipid(inchi2, mol2)):
+            return {"A": False, "B": None, "C": None, "D": None}
+
+        _validator = LipidHeadValidator()
+        head_class1 = _validator.identify_lipid_class(mol1_a)
+        head_class2 = _validator.identify_lipid_class(mol2_a)
+        if head_class1 and head_class2 and not set(head_class1) & set(head_class2):
+            return {"A": False, "B": False, "C": False, "D": False}
+
+        tails1 = TailExtractor.extract_tails(mol1_a)
+        tails2 = TailExtractor.extract_tails(mol2_a)
+
+        if not tails1 or not tails2:
+            return {"A": False, "B": False, "C": False, "D": False}
+
+        # Level B: sn-Position independence
+        sig1_b = sorted(LipidAnalysis.tail_sig_levelB(t) for t in tails1)
+        sig2_b = sorted(LipidAnalysis.tail_sig_levelB(t) for t in tails2)
+        if sig1_b == sig2_b:
+            return {"A": False, "B": True, "C": True, "D": True}
+
+        # Level C: Intra-chain position independence
+        sig1_c = sorted(LipidAnalysis.tail_sig_levelC(t) for t in tails1)
+        sig2_c = sorted(LipidAnalysis.tail_sig_levelC(t) for t in tails2)
+        if sig1_c == sig2_c:
+            return {"A": False, "B": False, "C": True, "D": True}
+
+        # Level D: Sum composition
+        total1 = (sum(t["C"] for t in tails1), sum(t["DB"] for t in tails1))
+        total2 = (sum(t["C"] for t in tails2), sum(t["DB"] for t in tails2))
+        level_d = (total1 == total2)
+
+        return {"A": False, "B": False, "C": False, "D": level_d}
+
     #stereochemical layer - sublayer
     def areEqualNoPositionDoubleBond(inchi1: str, inchi2: str) -> bool:
         if inchi1 == inchi2:
@@ -465,8 +540,8 @@ class InChI:
         mol2 = tautomer_enumerator.Canonicalize(mol2)
 
         # STEP 6: lipid detection
-        is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1, use_classyfire=False)
-        is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2, use_classyfire=False)
+        is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1)
+        is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2)
 
         if is_lipid1 != is_lipid2:
             return False
@@ -545,16 +620,37 @@ class InChI:
 
         #STEREOCHEMICAL
         # DOUBLE BOND POSITION
-        if criteria["isomer_independence"]["double_bond_position_independent_identity"]:
+        isomer_cfg = criteria.get("isomer_independence", {})
+        if isomer_cfg.get("double_bond_position_independent_identity", False):
             results[InchiLayers.DOUBLE_BONDS_INDEPENDENCE] = (
                 InChI.areEqualNoPositionDoubleBond(inchi1, inchi2)
             )
 
-        # CIS/TRANS
-        if criteria["isomer_independence"]["cis_trans_independent_identity"]:
-            results[InchiLayers.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE] = (
-                InChI.areEqualNoStereo(inchi1, inchi2)
-            )
+        # ISOMER SUB-LEVELS (Cis/Trans → sn-Position → Chain Position → Sum Composition)
+        needs_sublevels = any([
+            isomer_cfg.get("cis_trans_independence", False),
+            isomer_cfg.get("sn_position_independence", False),
+            isomer_cfg.get("chain_position_independence", False),
+            isomer_cfg.get("sum_composition_independence", False),
+        ])
+        if needs_sublevels:
+            sublevel_results = InChI.areEqualIsomerSubLevels(inchi1, inchi2)
+            if isomer_cfg.get("cis_trans_independence", False):
+                val = sublevel_results.get("A")
+                if val is not None:
+                    results[InchiLayers.CIS_TRANS_INDEPENDENCE] = val
+            if isomer_cfg.get("sn_position_independence", False):
+                val = sublevel_results.get("B")
+                if val is not None:
+                    results[InchiLayers.SN_POSITION_INDEPENDENCE] = val
+            if isomer_cfg.get("chain_position_independence", False):
+                val = sublevel_results.get("C")
+                if val is not None:
+                    results[InchiLayers.CHAIN_POSITION_INDEPENDENCE] = val
+            if isomer_cfg.get("sum_composition_independence", False):
+                val = sublevel_results.get("D")
+                if val is not None:
+                    results[InchiLayers.SUM_COMPOSITION_INDEPENDENCE] = val
 
         # TAUTOMERS
         tautomer_cfg = criteria.get("tautomer_independence", {})

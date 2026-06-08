@@ -27,16 +27,6 @@ class SimpleMgfDeduplicator:
         self.config = config
         self.changes_log: List[UnificationChange] = []
 
-        self.layer_map = {
-            "COMPLETE_IDENTITY": InchiLayers.COMPLETE_IDENTITY,
-            "ISOTOPIC_INDEPENDENCE": InchiLayers.ISOTOPIC_INDEPENDENCE,
-            "SALTS_INDEPENDENCE": InchiLayers.SALTS_INDEPENDENCE,
-            "CHARGES_INDEPENDENCE": InchiLayers.CHARGES_INDEPENDENCE,
-            "DOUBLE_BONDS_INDEPENDENCE": InchiLayers.DOUBLE_BONDS_INDEPENDENCE,
-            "STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE": InchiLayers.STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE,
-            "TAUTOMER_INDEPENDENCE": InchiLayers.TAUTOMER_INDEPENDENCE,
-        }
-
     def parse_mgf(self, file_path: str) -> List[Dict]:
         entries = []
         current = {}
@@ -146,19 +136,13 @@ class SimpleMgfDeduplicator:
                 else:
                     return inchi_temp
 
-            if self.layer == "STEREOCHEMICAL_CIS_TRANS_INDEPENDENCE":
-                inchi = InChIParser.removeIsotopicLayers(inchi)
-                mol = InChI.mol_from_inchi(inchi)
-                if mol is None:
-                    return inchi
-
-                mol = InChI.main_fragment(mol)
-                mol = InChI.neutralize_molecule(mol)
-                mol = InChI.remove_cis_trans(mol)
-
-                return Chem.MolToInchi(mol)
-
-            if self.layer == "DOUBLE_BONDS_INDEPENDENCE":
+            if self.layer in (
+                "CIS_TRANS_INDEPENDENCE",
+                "SN_POSITION_INDEPENDENCE",
+                "CHAIN_POSITION_INDEPENDENCE",
+                "SUM_COMPOSITION_INDEPENDENCE",
+                "DOUBLE_BONDS_INDEPENDENCE",
+            ):
                 inchi = InChIParser.removeIsotopicLayers(inchi)
                 mol = InChI.mol_from_inchi(inchi)
                 if mol is None:
@@ -242,7 +226,7 @@ class SimpleMgfDeduplicator:
 
         try:
             comparison = InChI.get_ids(canonical1, canonical2, self.config)
-            layer_enum = self.layer_map.get(self.layer, InchiLayers.COMPLETE_IDENTITY)
+            layer_enum = InchiLayers[self.layer]
             return comparison.get(layer_enum, False)
         except Exception as e:
             print(f"Error comparing structures at layer {self.layer}: {e}")
