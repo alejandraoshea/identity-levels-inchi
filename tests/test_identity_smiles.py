@@ -1,5 +1,5 @@
 import unittest
-from src.backend.inchi.determine_levels_id import InChI
+from inchi_identity.inchi.determine_levels_id import InChI
 from rdkit import Chem
 
 

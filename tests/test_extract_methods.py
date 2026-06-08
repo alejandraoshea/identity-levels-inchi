@@ -1,5 +1,5 @@
 import unittest
-from src.backend.inchi.inchi_parser import InChIParser
+from inchi_identity.inchi.inchi_parser import InChIParser
 from rdkit import Chem
 
 class TestInChI(unittest.TestCase):

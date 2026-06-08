@@ -1,3 +1,0 @@
-CC(=O)[O-].[Na+]
-CCO
-C[N+](C)(C)CC(=O)[O-]

@@ -1,7 +1,7 @@
 import unittest
 from rdkit import Chem
-from src.backend.lipid.lipid_analysis import LipidHeadValidator, LipidAnalysis
-from src.backend.inchi.inchi_parser import InChIParser
+from inchi_identity.lipid.lipid_analysis import LipidHeadValidator, LipidAnalysis
+from inchi_identity.inchi.inchi_parser import InChIParser
 
 class TestEx7__2_NeutralGlycosphingolipids(unittest.TestCase):
     """Galβ1-4GlcNAcα1-3Galβ1-4GlcNAcβ1-3Galβ1-4Glcβ-Cer(d18:1/16:0)"""
