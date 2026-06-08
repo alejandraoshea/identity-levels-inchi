@@ -4,11 +4,11 @@ from rdkit.Chem import rdmolops
 from collections import Counter
 from rdkit.Chem import inchi, MolToSmiles
 from rdkit.Chem.SaltRemover import SaltRemover
-from backend.inchi.inchi_parser import InChIParser
-from backend.inchi.inchi_layers_enum import InchiLayers
-from backend.lipid.lipid_analysis import LipidAnalysis
-from backend.lipid.lipid_analysis import LipidHeadValidator
-from backend.lipid.lipid_tail_extraction import TailExtractor
+from inchi_identity.inchi.inchi_parser import InChIParser
+from inchi_identity.inchi.inchi_layers_enum import InchiLayers
+from inchi_identity.lipid.lipid_analysis import LipidAnalysis
+from inchi_identity.lipid.lipid_analysis import LipidHeadValidator
+from inchi_identity.lipid.lipid_tail_extraction import TailExtractor
 import subprocess, os
 from rdkit.Chem.Scaffolds import MurckoScaffold
 from collections import Counter

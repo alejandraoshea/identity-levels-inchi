@@ -1,9 +1,9 @@
 import argparse
 import json
 import sys
-from backend.inchi.compare import compare_text_files, compare_pair, read_file_lines
-from backend.inchi.config_loader import load_config, build_config_from_layers, apply_inchitrust
-from backend.inchi.mgf_parser import SimpleMgfDeduplicator
+from inchi_identity.inchi.compare import compare_text_files, compare_pair, read_file_lines
+from inchi_identity.inchi.config_loader import load_config, build_config_from_layers, apply_inchitrust
+from inchi_identity.inchi.mgf_parser import SimpleMgfDeduplicator
 
 
 def main():

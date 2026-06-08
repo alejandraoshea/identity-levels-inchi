@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import os
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[2] / "backend/configs/default_config.json"
+DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs/default_config.json"
 
 def load_config(config_path=None):
     if config_path is None:

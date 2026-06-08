@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, asdict
 
-from backend.inchi.determine_levels_id import InChI
-from backend.inchi.inchi_layers_enum import InchiLayers
-from backend.inchi.inchi_parser import InChIParser
-from backend.inchi.smiles_pattern import SmilesCorrector 
+from inchi_identity.inchi.determine_levels_id import InChI
+from inchi_identity.inchi.inchi_layers_enum import InchiLayers
+from inchi_identity.inchi.inchi_parser import InChIParser
+from inchi_identity.inchi.smiles_pattern import SmilesCorrector
 from rdkit import Chem
 from rdkit.Chem.SaltRemover import SaltRemover
 from rdkit.Chem.MolStandardize import rdMolStandardize

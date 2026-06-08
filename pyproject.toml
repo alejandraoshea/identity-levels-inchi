@@ -1,6 +1,6 @@
 [project]
 name = "inchi-identity"
-version = "0.2.1"
+version = "0.2.2"
 description = "Hierarchical molecular identity comparison framework for untargeted metabolomics"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,11 +17,11 @@ dependencies = [
 ]
 
 [project.scripts]
-inchi = "backend.cli.cli:main"
+inchi = "inchi_identity.cli.cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/backend"]
+packages = ["src/inchi_identity"]

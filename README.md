@@ -106,7 +106,7 @@ inchi compare-pair-layers "<inchi_1>" "<inchi_2>" \
     --layers isotope charge double_bond tautomer
 ```
 
-Available layer names: `isotope`, `salt`, `charge`, `double_bond`, `tautomer`
+Available layer names: `complete_identity`, `isotope`, `salt`, `charge`, `double_bond`, `tautomer`
 
 ### Mode 3 — File-based comparison
 
@@ -209,11 +209,11 @@ Only layers that evaluated to `true` are shown, under the `matches` key:
     "total_changes": 3,
     "changes": [
         {
-            "original_structure": "InChI=1S/C10H16N5O13P3/...p-1/t4-,6-,7-,10-/m1/s1",
+            "original_structure": "original_structure": "InChI=1S/C10H16N5O13P3/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(26-10)1-25-30(21,22)28-31(23,24)27-29(18,19)20/h2-4,6-7,10,16-17H,1H2,(H,21,22)(H,23,24)(H2,11,12,13)(H2,18,19,20)/p-1/t4-,6-,7-,10-/m1/s1",
             "structure_type": "INCHI",
             "smiles_to_inchi": null,
-            "normalized_inchi": "InChI=1S/C10H16N5O13P3/.../t4-,6-,7-,10-/m1/s1",
-            "canonical_inchi":  "InChI=1S/C10H16N5O13P3/.../t4-,6-,7-,10-/m1/s1"
+            "normalized_inchi": "InChI=1S/C10H16N5O13P3/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(26-10)1-25-30(21,22)28-31(23,24)27-29(18,19)20/h2-4,6-7,10,16-17H,1H2,(H,21,22)(H,23,24)(H2,11,12,13)(H2,18,19,20)/t4-,6-,7-,10-/m1/s1",
+            "canonical_inchi":  "InChI=1S/C10H16N5O13P3/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(26-10)1-25-30(21,22)28-31(23,24)27-29(18,19)20/h2-4,6-7,10,16-17H,1H2,(H,21,22)(H,23,24)(H2,11,12,13)(H2,18,19,20)/t4-,6-,7-,10-/m1/s1"
         }
     ]
 }

@@ -5,9 +5,9 @@ from rdkit import Chem
 from rdkit.Chem import MolToSmiles
 from rdkit.Chem import inchi as rdInchi
 from collections import Counter
-from backend.lipid.lipid_tail_extraction import TailExtractor
-from backend.lipid.lipid_pattern_generator import build_combined_patterns
-from backend.inchi.inchi_parser import InChIParser
+from inchi_identity.lipid.lipid_tail_extraction import TailExtractor
+from inchi_identity.lipid.lipid_pattern_generator import build_combined_patterns
+from inchi_identity.inchi.inchi_parser import InChIParser
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
