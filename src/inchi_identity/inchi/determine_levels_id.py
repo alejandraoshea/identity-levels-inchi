@@ -456,7 +456,7 @@ class InChI:
                 tmp_path = f.name
             
             result = subprocess.run(
-                [inchitrust_path, tmp_path, "-", "/AuxNone", "/NoLabels", "/NoWarnings"],
+                [inchitrust_path, tmp_path, "-", "/AuxNone", "/NoLabels", "/NoWarnings", "/-1"],
                 capture_output=True,
                 text=True,
                 encoding="utf-8"
