@@ -19,7 +19,10 @@
 
     "isomer_independence": {
       "double_bond_position_independent_identity": true,
-      "cis_trans_independent_identity": true
+      "cis_trans_independence": true,
+      "sn_position_independence": true,
+      "chain_position_independence": true,
+      "sum_composition_independence": true
     },
 
     "tautomer_independence": {

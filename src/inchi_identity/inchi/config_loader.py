@@ -43,7 +43,10 @@ def build_config_from_layers(selected_layers, base_config):
         "salt": ("salt_independence", "desalted_identity"),
         "charge": ("charge_independence", "charge_independent_identity"),
         "double_bond": ("isomer_independence", "double_bond_position_independent_identity"),
-        "stereo_cis_trans": ("isomer_independence", "cis_trans_independent_identity"),
+        "cis_trans": ("isomer_independence", "cis_trans_independence"),
+        "sn_position": ("isomer_independence", "sn_position_independence"),
+        "chain_position": ("isomer_independence", "chain_position_independence"),
+        "sum_composition": ("isomer_independence", "sum_composition_independence"),
         "tautomer": ("tautomer_independence", "tautomer_independent_identity"),
     }
 
