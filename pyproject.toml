@@ -14,7 +14,7 @@ dependencies = [
     "requests",
     "openpyxl",
     "python-dotenv",
-    rdkit,
+    "rdkit",
 ]
 
 [project.scripts]
