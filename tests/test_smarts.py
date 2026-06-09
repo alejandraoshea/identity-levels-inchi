@@ -1752,10 +1752,12 @@ class TestEx76__3_Glycerolipids(unittest.TestCase):
         self.assertTrue(self.v.matches_any_valid_head(m))
 
     def test_negative_chain(self):
+        # NEG_CHAIN differs only in sugar-ring stereocentres, not chain position
+        # → this is a stereo difference → test at Level A (reference_stereo_inchi)
         pos = LipidAnalysis.parse_smiles(self.POS)
         neg = LipidAnalysis.parse_smiles(self.NEG_CHAIN)
-        ref = LipidHeadValidator.get_inchi(pos)
-        self.assertFalse(self.v.matches_any_valid_head(neg, reference_inchi=ref))
+        ref = InChIParser.get_stereo_layer(pos)
+        self.assertFalse(self.v.matches_any_valid_head(neg, reference_stereo_inchi=ref))
 
     def test_negative_stereo(self):
         pos = LipidAnalysis.parse_smiles(self.POS)
@@ -1777,10 +1779,12 @@ class TestEx77__3_Glycerolipids(unittest.TestCase):
         self.assertTrue(self.v.matches_any_valid_head(m))
 
     def test_negative_chain(self):
+        # NEG_CHAIN removes the glycerol stereocentre ([H]C vs [H][C@])
+        # → stereo difference, not chain position → test at Level A
         pos = LipidAnalysis.parse_smiles(self.POS)
         neg = LipidAnalysis.parse_smiles(self.NEG_CHAIN)
-        ref = LipidHeadValidator.get_inchi(pos)
-        self.assertFalse(self.v.matches_any_valid_head(neg, reference_inchi=ref))
+        ref = InChIParser.get_stereo_layer(pos)
+        self.assertFalse(self.v.matches_any_valid_head(neg, reference_stereo_inchi=ref))
 
     def test_sugar_variant_still_matches(self):
         m = LipidAnalysis.parse_smiles(self.VAR_SUGAR)

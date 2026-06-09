@@ -152,8 +152,9 @@ class InChIParser:
         return None
     
     def get_stereo_layer(mol: Chem.Mol) -> str:
+        """Level A: all stereo layers — /b (E/Z double bonds) + /t /m /s (tetrahedral)."""
         i = rdInchi.MolToInchi(mol) or ''
-        parts = [p for p in i.split('/') if p.startswith(('t', 'm', 's'))]
+        parts = [p for p in i.split('/') if p.startswith(('b', 't', 'm', 's'))]
         return '/'.join(parts)
 
 

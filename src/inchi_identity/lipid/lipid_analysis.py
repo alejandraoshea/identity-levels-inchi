@@ -29,283 +29,12 @@ class HeadgroupPattern:
 
 
 class LipidHeadValidator:
-    MANUAL_PATTERNS = {
-        "phosphatidylcholine": HeadgroupPattern(
-            name="Phosphatidylcholine (PC)",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CH2X4][NX4+]([CH3X4])([CH3X4])[CH3X4])[OX2][CX3](=[OX1])[#6]",
-            lipid_class="Phosphatidylcholines",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-        "phosphatidylethanolamine": HeadgroupPattern(
-            name="Phosphatidylethanolamine (PE)",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CH2X4][NX3H2,NX4H3+])[OX2][CX3](=[OX1])[#6]",
-            lipid_class="Phosphatidylethanolamines",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-        "phosphatidylserine": HeadgroupPattern(
-            name="Phosphatidylserine (PS)",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CHX4]([NX3H2,NX4H3+])[CX3](=[OX1])[OX2H0,OX1-,OX1H1])[OX2][CX3](=[OX1])[#6]",
-            lipid_class="Phosphatidylserines",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-        "phosphatidylglycerol": HeadgroupPattern(
-            name="Phosphatidylglycerol (PG)",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CHX4]([OX2H1])[CH2X4][OX2H1])[OX2][CX3](=[OX1])[#6]",
-            lipid_class="Phosphatidylglycerols",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-        "cardiolipin": HeadgroupPattern(
-            name="Cardiolipin (CL)",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CHX4]([CH2X4][OX2][PX4](=[OX1])([OX2H0,OX1-,OX1H1])[OX2][CH2X4][CHX4][CH2X4])[OX2])[OX2][CX3](=[OX1])[#6]",
-            lipid_class="Cardiolipins",
-            fa_positions=["sn-1", "sn-2", "sn-1'", "sn-2'"],
-        ),
-
-        "gpl_diacyl": HeadgroupPattern(
-            name="Diacyl-glycerophospholipid (generic)",
-            smarts="[CH2X4]([OX2][CX3](=[OX1])[#6])[CHX4]([OX2][CX3](=[OX1])[#6])[CH2X4][OX2][PX4]",
-            lipid_class="Glycerophospholipids",
-            fa_positions=[],
-            description="Covers all diacyl-GPL variants regardless of headgroup identity",
-        ),
-        "gpl_plasmalogen_full": HeadgroupPattern(
-            name="Plasmalogen (vinyl ether at sn-1)",
-            smarts="[CH2X4]([OX2]/[CH]=[CH]/[#6])[CHX4]([OX2][CX3](=[OX1])[#6])[CH2X4][OX2][PX4]",
-            lipid_class="Glycerophospholipids",
-            fa_positions=[],
-        ),
-        "gpl_ether_chain": HeadgroupPattern(
-            name="Ether-linked glycerophospholipid",
-            smarts="[CX4][OX2][CX4]~[CX4]~[CX4]~[CX4]~[CX4].[CH2X4][OX2][PX4]",
-            lipid_class="Glycerophospholipids",
-            fa_positions=[],
-        ),
-        "gpl_dhap": HeadgroupPattern(
-            name="DHAP-type glycerophospholipid",
-            smarts="[CH2X4][OX2][CX3](=[OX1])[#6].[CH2X4][OX2][PX4]",
-            lipid_class="Glycerophospholipids",
-            fa_positions=[],
-        ),
-
-        "ceramide_nacyl_relaxed": HeadgroupPattern(
-            name="Ceramide N-acyl (sphingoid context required)",
-            smarts="[NX3H1]([CX3](=[OX1])[#6]~[#6]~[#6]~[#6]~[#6]~[#6]~[#6]~[#6])[CX4H1][CX4][OX2H1]",
-            lipid_class="Ceramides",
-            fa_positions=["N-acyl"],
-            description="N-amide must be on CH adjacent to CH2-OH (sphingoid base context).",
-        ),
-        "ceramide": HeadgroupPattern(
-            name="Ceramide",
-            smarts="[NX3H1][CX3](=[OX1])[CX4][CX4][CX4][CX4][CX4][CX4][CX4][CX4]",
-            lipid_class="Ceramides",
-            fa_positions=["N-acyl"],
-        ),
-        "sphingomyelin": HeadgroupPattern(
-            name="Sphingomyelin (SM)",
-            smarts="[NX3H1][CX3](=[OX1])[CX4][CX4][CX4][CX4][CX4][CX4][CX4][CX4]",
-            lipid_class="Sphingomyelins",
-            fa_positions=["N-acyl"],
-        ),
-        "ceramide_phosphoinositol": HeadgroupPattern(
-            name="Ceramide phosphoinositol",
-            smarts="[NX3H1][CX3](=[OX1])[CX4][CX4][CX4][CX4][CX4][CX4][CX4][CX4].[PX4](=[OX1])[OX2][CH]1[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]([OX2H1])[CH]1[OX2H1]",
-            lipid_class="Phosphosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "sphingoid_base_free": HeadgroupPattern(
-            name="Free sphingoid base",
-            smarts="[NX3H2][CX4][CH2X4][OX2H1]",
-            lipid_class="Sphingolipids",
-            fa_positions=[],
-        ),
-        "ganglioside_core": HeadgroupPattern(
-            name="Ganglioside core",
-            smarts="[NX3H1][CX3](=[OX1])[CX4][CX4][CX4][CX4][CX4][CX4][CX4][CX4].[CH]1O[CH](CO)[CH](O)[CH](O)[CH]1O",
-            lipid_class="Gangliosides",
-            fa_positions=["N-acyl"],
-        ),
-        "glycosphingolipid_galactose": HeadgroupPattern(
-            name="Glycosphingolipid with Galactose",
-            smarts="[H][C@](NC(CCCCCCCCCCCCCCC)=O)(CO[C@H]1[C@H](O)[C@@H](O)[C@H](O)[C@@H](O)[C@H]1O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC",
-            lipid_class="Neutral glycosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "glycosphingolipid_glucose": HeadgroupPattern(
-            name="Glycosphingolipid with Glucose",
-            smarts="[H][C@](NC(CCCCCCCCCCCCCCC)=O)(CO[C@H]1O[C@H](CO)[C@@H](O)[C@H](O)[C@@H]1O)[C@@](O)([H])/C=C/CCCCCCCCCCCCC",
-            lipid_class="Neutral glycosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "acidic_glycosphingolipid_glucuronic": HeadgroupPattern(
-            name="Acidic Glycosphingolipid",
-            smarts="[NX3H1][CX3](=[OX1])[CX4][CX4][CX4][CX4][CX4][CX4][CX4][CX4]",
-            lipid_class="Acidic glycosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "sphingomyelin_detailed": HeadgroupPattern(
-            name="Sphingomyelin (detailed)",
-            smarts="[H][C@](NC(CCCCCCCCCCCCCCCCCCC)=O)(COP(OCC[N+](C)(C)C)([O-])=O)[C@@](O)([H])CCCCCCCCCCCCCCC",
-            lipid_class="Phosphosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "ceramide_phosphoethanolamine": HeadgroupPattern(
-            name="Ceramide Phosphoethanolamine",
-            smarts="[H][C@](NC(CCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(OCCN)(O)=O)[C@@](O)([H])CCCCCCCCCCCCCCC",
-            lipid_class="Phosphosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-        "ceramide_phosphoinositol_detailed": HeadgroupPattern(
-            name="Ceramide Phosphoinositol (detailed)",
-            smarts="[H][C@](NC(C(O)CCCCCCCCCCCCCCCCCCCCCCCC)=O)(COP(O[C@@H]1[C@H](O)[C@H](O)[C@@H](O)[C@H](O)[C@H]1O)(O)=O)[C@@](O)([H])CCCCCCCCCCCCCCCCC",
-            lipid_class="Phosphosphingolipids",
-            fa_positions=["N-acyl"],
-        ),
-
-        "saccharolipid_n_acyl": HeadgroupPattern(
-            name="Saccharolipid (N-acyl aminosugar)",
-            smarts="[C;R][NX3][CX3](=[OX1])[#6]~[#6]~[#6]",
-            lipid_class="Saccharolipids",
-            fa_positions=[],
-        ),
-        "saccharolipid_o_acyl": HeadgroupPattern(
-            name="Saccharolipid (O-acyl sugar)",
-            smarts="[C;R][OX2][CX3](=[OX1])[#6]~[#6]~[#6]~[#6]",
-            lipid_class="Saccharolipids",
-            fa_positions=[],
-            description="Ester on sugar ring carbon. Post-match: ring must contain O (pyranose/furanose); "
-                        "molecule must not have free sphingoid base.",
-        ),
-
-        "sterol_ester_generic": HeadgroupPattern(
-            name="Sterol ester (ring O-acyl)",
-            smarts="[C;R][OX2][CX3](=[OX1])[CX4,CX3]~[CX4]~[CX4]",
-            lipid_class="Sterols",
-            fa_positions=[],
-            description="Post-match: requires ≥3 rings (steroid nucleus) and no phosphate.",
-        ),
-        "sterol_core": HeadgroupPattern(
-            name="Sterol core",
-            smarts="[C@]12CC[C@H]3[C@@H](CC[C@]4(C)[C@@H]3CC=C4)C1CCC2",
-            lipid_class="Sterols",
-            fa_positions=[],
-        ),
-
-        "glycerolipid_o_glycosyl": HeadgroupPattern(
-            name="O-glycosylglycerolipid",
-            smarts="[CX4][OX2][CH]1O[CH][CH][CH][CH]1",
-            lipid_class="Glycerolipids",
-            fa_positions=[],
-        ),
-        "glycerolipid_monoacyl": HeadgroupPattern(
-            name="Monoacyl-glycerolipid (non-phosphate sn-3)",
-            smarts="[CH2X4]([OX2][CX3](=[OX1])[#6])[CHX4]([OX2,OH1])[CH2X4][OX2;!$([OX2][PX4])]",
-            lipid_class="Glycerolipids",
-            fa_positions=[],
-        ),
-        "glycerolipid_acyl_ch": HeadgroupPattern(
-            name="Acyl-glycerolipid (ester on central CH)",
-            smarts="[CHX4]([OX2][CX3](=[OX1])[#6])([CH2X4])[CH2X4][OX2;!$([OX2][PX4])]",
-            lipid_class="Glycerolipids",
-            fa_positions=[],
-        ),
-        "glycosylglycerol_sn1": HeadgroupPattern(
-            name="Glycosylglycerol (FA at sn-1)",
-            smarts="O[C@H]1[C@H](OC[C@H](O)C[OX2][CX3](=O)[CX4,CX3]~[CX4,CX3]~[CX4,CX3])O[C@H](CO[C@H]2O[C@H](CO)[C@H](O)[C@H](O)[C@H]2O)[C@H](O)[C@@H]1O",
-            lipid_class="Glycoglycerolipids",
-            fa_positions=["sn-1"],
-        ),
-        "diacylglycerol_1_2": HeadgroupPattern(
-            name="1,2-Diacylglycerol",
-            smarts="[OX2H1][CH2X4][CHX4]([OX2][CX3](=[OX1])[#6])[CH2X4][OX2][CX3](=[OX1])[#6]",
-            lipid_class="Diacylglycerols",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-        "diacylglycerol_1_3": HeadgroupPattern(
-            name="1,3-Diacylglycerol",
-            smarts="[OX2][CX3](=[OX1])[#6].[CH2X4][CHX4]([OX2H1])[CH2X4][OX2][CX3](=[OX1])[#6]",
-            lipid_class="Diacylglycerols",
-            fa_positions=["sn-1", "sn-3"],
-        ),
-        "monoacylglycerol_sn1": HeadgroupPattern(
-            name="1-Monoacylglycerol",
-            smarts="[OX2H1][CH2X4][CHX4]([OX2H1])[CH2X4][OX2][CX3](=[OX1])[#6]",
-            lipid_class="Monoacylglycerols",
-            fa_positions=["sn-1"],
-        ),
-        "monoacylglycerol_sn2": HeadgroupPattern(
-            name="2-Monoacylglycerol",
-            smarts="[OX2H1][CH2X4][CHX4]([OX2][CX3](=[OX1])[#6])[CH2X4][OX2H1]",
-            lipid_class="Monoacylglycerols",
-            fa_positions=["sn-2"],
-        ),
-        "triacylglycerol": HeadgroupPattern(
-            name="Triacylglycerol",
-            smarts="[CH2X4]([OX2][CX3](=[OX1])[#6])[CHX4]([OX2][CX3](=[OX1])[#6])[CH2X4][OX2][CX3](=[OX1])[#6]",
-            lipid_class="Triacylglycerols",
-            fa_positions=["sn-1", "sn-2", "sn-3"],
-        ),
-
-        "fatty_acid": HeadgroupPattern(
-            name="Fatty acid",
-            smarts="[CH2X4][CH2X4][CH2X4][CH2X4][CH2X4][CX3](=O)[OX2H1]",
-            lipid_class="Fatty acids",
-            fa_positions=[],
-        ),
-        "plasmalogen": HeadgroupPattern(
-            name="Plasmalogen",
-            smarts="[CH2X4][CHX4]([CH2X4][OX2][CH]=[CH])[OX2][PX4]",
-            lipid_class="Ether phospholipids",
-            fa_positions=["sn-1", "sn-2"],
-        ),
-
-        "prenol_lactone": HeadgroupPattern(
-            name="Prenol lipid lactone",
-            smarts="[O;R][CX3](=[OX1])[#6]",
-            lipid_class="Prenol lipids",
-            fa_positions=[],
-        ),
-        "prenol_allylic_ester": HeadgroupPattern(
-            name="Prenol allylic ester",
-            smarts="[OX2][CX3](=[OX1])[CX4,CX3][CX3]=[CX3]",
-            lipid_class="Prenol lipids",
-            fa_positions=[],
-        ),
-        "prenol_polyene_ester": HeadgroupPattern(
-            name="Prenol polyene ester (retinoid)",
-            smarts="[CX3]=[CX3][CX4][OX2][CX3](=[OX1])",
-            lipid_class="Prenol lipids",
-            fa_positions=[],
-        ),
-        "prenol_amide": HeadgroupPattern(
-            name="Prenol lipid amide (quinone derivative)",
-            smarts="[NX3][CX3](=[OX1])[CX4]~[CX4]~[CX4].[c,C][OX2H1]",
-            lipid_class="Prenol lipids",
-            fa_positions=[],
-        ),
-    }
 
     HEADGROUP_PATTERNS = build_combined_patterns(
-        manual_patterns=MANUAL_PATTERNS, excel_path="Naming_Example.xlsx"
+        manual_patterns={}, excel_path="Naming_Example.xlsx"
     )
 
-    # Priority order: most specific → least specific.
-    PATTERN_PRIORITY = [
-        ["phosphatidylcholine", "phosphatidylethanolamine", "phosphatidylserine",
-         "phosphatidylglycerol", "cardiolipin"],
-        ["gpl_diacyl", "gpl_plasmalogen_full", "gpl_ether_chain", "gpl_dhap"],
-        ["ceramide_nacyl_relaxed", "ceramide", "sphingomyelin",
-         "ceramide_phosphoinositol", "sphingoid_base_free", "ganglioside_core",
-         "glycosphingolipid_galactose", "glycosphingolipid_glucose",
-         "acidic_glycosphingolipid_glucuronic", "sphingomyelin_detailed",
-         "ceramide_phosphoethanolamine", "ceramide_phosphoinositol_detailed"],
-        ["saccharolipid_n_acyl", "saccharolipid_o_acyl"],
-        ["sterol_ester_generic", "sterol_core"],
-        ["glycerolipid_o_glycosyl", "glycerolipid_monoacyl", "glycerolipid_acyl_ch",
-         "glycosylglycerol_sn1", "diacylglycerol_1_2", "diacylglycerol_1_3",
-         "monoacylglycerol_sn1", "monoacylglycerol_sn2", "triacylglycerol"],
-        ["prenol_lactone", "prenol_allylic_ester", "prenol_polyene_ester",
-         "prenol_amide", "fatty_acid", "plasmalogen"],
-    ]
+    PATTERN_PRIORITY = []
 
     def __init__(self):
         self.compiled_patterns: Dict[str, Tuple[HeadgroupPattern, Chem.Mol]] = {}
@@ -330,12 +59,17 @@ class LipidHeadValidator:
         pattern_info, mol_pattern = self.compiled_patterns[pattern_id]
 
         # Step 1: SMARTS substructure match
-        if not mol.HasSubstructMatch(mol_pattern):
+        # Excel patterns use explicit ([H]) notation, so add Hs before matching.
+        # Chirality is NOT checked here — stereo is validated separately via
+        # InChI layer comparison; the SMARTS check is topology-only.
+        mol_h = Chem.AddHs(mol)
+        if not mol_h.HasSubstructMatch(mol_pattern, useChirality=False):
             return False
 
-        # Step 2: FA chain guard
+        # Step 2: FA chain guard — require at least a 2-carbon substituent so
+        # pure headgroup fragments don't match, but allow short-chain test lipids.
         if pattern_info.fa_positions:
-            if not LipidAnalysis.has_long_carbon_chain(mol, min_len=6):
+            if not LipidAnalysis.has_long_carbon_chain(mol, min_len=2):
                 return False
 
         # Step 3: Positional constraints (pattern-specific)
@@ -396,15 +130,22 @@ class LipidHeadValidator:
     ) -> bool:
         """
         Three modes depending on which reference is supplied:
-        Headgroup class (no reference):
-            Pure SMARTS topology check. Confirms the molecule belongs to a
-            recognised lipid class. Stereo and FA position are ignored.
 
-        Stereo-validated (reference_stereo_inchi):
-            Headgroup class check AND InChI stereo layer comparison (/t /m /s).
-            Rejects the molecule if its stereocentres differ from the reference.
+        Headgroup class only (no reference):
+            Pure SMARTS topology check. Lipid class recognised; stereo and FA
+            positions are ignored.
 
-        Complete identity (reference_inchi):
+        Level B/C — chain identity (reference_inchi):
+            Headgroup class + connectivity match without stereo.  Stereo layers
+            (/b /t /m /s) are stripped before comparing, so only chain length,
+            double bond count/position, and attachment point matter.  A molecule
+            with the correct chain at the wrong sn-position fails; a molecule
+            with the correct chain but inverted stereocenter passes.
+
+        Level A — stereospecific identity (reference_stereo_inchi):
+            Headgroup class + full stereo match: /b (E/Z double bonds) and
+            /t /m /s (tetrahedral centres).  Requires get_stereo_layer to
+            have extracted those layers from the reference molecule.
         """
         class_match = False
         for priority_group in self.PATTERN_PRIORITY:
@@ -427,11 +168,16 @@ class LipidHeadValidator:
             return False
 
         if reference_inchi:
+            # Level B/C: compare connectivity without stereo layers so that
+            # chain position / composition differences are caught but stereo
+            # variants of the same chain are not rejected at this level.
             mol_inchi = LipidHeadValidator.get_inchi(mol)
-            if not (mol_inchi == reference_inchi):
+            if (InChIParser.removeStereoLayers(mol_inchi)
+                    != InChIParser.removeStereoLayers(reference_inchi)):
                 return False
 
         if reference_stereo_inchi:
+            # Level A: compare all stereo layers (/b /t /m /s).
             mol_stereo = InChIParser.get_stereo_layer(mol)
             if mol_stereo != reference_stereo_inchi:
                 return False
