@@ -53,9 +53,9 @@ For non-lipids, levels B, C, and D are not applicable — they are absent from t
 
 Lipid classification uses the ClassyFire API (5 s timeout, InChIKey lookup), with a
 SMARTS headgroup pattern fallback when ClassyFire is unavailable or the compound is not
-in its database. Headgroup validation uses a library of 428 SMARTS patterns (79 primary +
+in its database. Headgroup validation uses a library of 334 SMARTS patterns (79 primary +
 255 generated at runtime by combining 15 glycolipid templates with 17 monosaccharide
-patterns + 94 sugar-agnostic backbone patterns).
+patterns).
 
 ---
 

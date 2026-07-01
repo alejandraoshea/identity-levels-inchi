@@ -66,9 +66,7 @@ class PatternGenerator:
                 sugar_smarts = str(row[1]).strip() if len(row) > 1 and row[1] else None
                 if sugar_name and sugar_smarts:
                     sugars[sugar_name] = sugar_smarts
-            if sugars:
-                sugar_list = ', '.join(list(sugars.keys())[:5])
-                print(f"Loaded {len(sugars)} sugars: {sugar_list}...", file=sys.stderr)
+            pass
         except Exception as e:
             print(f"Error reading sugars: {e}", file=sys.stderr)
         return sugars
@@ -134,7 +132,6 @@ class PatternGenerator:
                     fa_positions=fa_pos,
                     description=f"Excel primary pattern row {row_idx} (ex {example_num})"
                 )
-            print(f"Loaded {len(patterns)} primary patterns from Excel", file=sys.stderr)
         except Exception as e:
             print(f"Error loading primary patterns: {e}", file=sys.stderr)
         return patterns
@@ -220,70 +217,6 @@ def build_combined_patterns(manual_patterns: Dict[str, HeadgroupPattern],
                     if pattern_id not in all_patterns:
                         all_patterns[pattern_id] = pattern
                         generated_added += 1
-
-            # Backbone patterns: one per template with [G] and [R] → [*]
-            backbone_added = 0
-            for template_id, template_info in templates.items():
-                backbone_smarts = (
-                    template_info["smarts"]
-                    .replace("[G]", "[*]")
-                    .replace("[R]", "[*]")
-                )
-                backbone_id = f"{template_id}_backbone"
-                if backbone_id not in all_patterns:
-                    lipid_subtype = template_info.get("lipid_subtype", "")
-                    all_patterns[backbone_id] = HeadgroupPattern(
-                        name=f"{lipid_subtype} (any sugar)" if lipid_subtype else f"Backbone {template_info['example_num']}",
-                        smarts=backbone_smarts,
-                        lipid_class=template_info["lipid_class"],
-                        fa_positions=template_info["fa_positions"],
-                        description=f"Backbone-only pattern for template {template_info['example_num']}"
-                    )
-                    backbone_added += 1
-
-            # Backbone variants for primary patterns: replace [R] with [*]
-            primary_backbone_added = 0
-            try:
-                import openpyxl as _openpyxl
-                wb = _openpyxl.load_workbook(excel_path)
-                ws = wb["Hoja1"]
-                seen = set()
-                for _row in ws.iter_rows(min_row=2, values_only=True):
-                    if not _row or len(_row) < 5 or not _row[3]:
-                        continue
-                    raw_smarts = str(_row[3]).strip()
-                    if "[G]" in raw_smarts or not isinstance(_row[3], str):
-                        continue  # templates handled above; skip [G] rows
-                    _ex = _row[0]
-                    lipid_type = _row[4]
-                    _lipid_subtype = _row[5] if len(_row) > 5 else None
-                    _backbone_smarts = PatternGenerator.normalise_kekulised_smarts(
-                        raw_smarts.replace("[R]", "[*]")
-                    )
-                    if _backbone_smarts in seen:
-                        continue
-                    seen.add(_backbone_smarts)
-                    safe_id = (f"primary_backbone_{_ex}"
-                                .replace(" ", "_").replace("(", "").replace(")", "")
-                                .replace("/", "_").replace("-", "_"))
-                    base_id = safe_id
-                    carbon = 1
-                    while safe_id in all_patterns:
-                        safe_id = f"{base_id}_{carbon}"
-                        carbon += 1
-                    fa_pos = PatternGenerator.fa_positions_from_r_count(raw_smarts, lipid_type)
-                    name = str(_lipid_subtype).strip() if _lipid_subtype else str(_ex)
-                    all_patterns[safe_id] = HeadgroupPattern(
-                        name=f"{name} (any chain)",
-                        smarts=_backbone_smarts,
-                        lipid_class=str(lipid_type) if lipid_type else "Unknown",
-                        fa_positions=fa_pos,
-                        description=f"Backbone-only primary pattern (ex {_ex})"
-                    )
-                    primary_backbone_added += 1
-            except Exception as _e:
-                print(f"Warning: primary backbone generation failed: {_e}", file=sys.stderr)
-            backbone_added += primary_backbone_added
 
             print(
                 f"[OK] Patterns Generated",
