@@ -51,9 +51,11 @@ automatically matches at B, C, and D as well (since each is more lenient).
 For non-lipids, levels B, C, and D are not applicable — they are absent from the result
 (`N/A` in the web interface).
 
-Lipid classification uses the ClassyFire API, with an RDKit-based heuristic fallback.
-Headgroup validation uses a library of 295 SMARTS patterns (40 manually curated + 255
-generated at runtime by combining 15 glycolipid templates with 17 monosaccharide patterns).
+Lipid classification uses the ClassyFire API (5 s timeout, InChIKey lookup), with a
+SMARTS headgroup pattern fallback when ClassyFire is unavailable or the compound is not
+in its database. Headgroup validation uses a library of 428 SMARTS patterns (79 primary +
+255 generated at runtime by combining 15 glycolipid templates with 17 monosaccharide
+patterns + 94 sugar-agnostic backbone patterns).
 
 ---
 

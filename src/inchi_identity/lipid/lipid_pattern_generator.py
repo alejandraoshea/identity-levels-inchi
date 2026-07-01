@@ -41,7 +41,6 @@ class PatternGenerator:
                     "fa_positions": ["N-acyl"] if "SP" in str(lipid_type) else ["sn-1", "sn-2"],
                     "example_num": example_num
                 }
-            print(f"Loaded {len(templates)} templates from Excel", file=sys.stderr)
         except Exception as e:
             print(f"Error loading templates: {e}", file=sys.stderr)
         return templates
@@ -75,7 +74,7 @@ class PatternGenerator:
         return sugars
 
     @staticmethod
-    def _fa_positions_from_r_count(smarts: str, lipid_type: str) -> List[str]:
+    def fa_positions_from_r_count(smarts: str, lipid_type: str) -> List[str]:
         """Derive fa_positions from the number of [R] placeholders in the SMARTS."""
         r_count = smarts.count("[R]")
         if r_count == 0:
@@ -110,11 +109,11 @@ class PatternGenerator:
                 # Replace [R] with generic carbon for matching, then normalise
                 # aromatic rings (Kekulé form in Excel → aromatic SMARTS)
                 matchable_smarts = template_smarts.replace("[R]", "[#6]")
-                matchable_smarts = PatternGenerator._normalise_kekulised_smarts(matchable_smarts)
+                matchable_smarts = PatternGenerator.normalise_kekulised_smarts(matchable_smarts)
                 if matchable_smarts in seen_smarts:
                     continue
                 seen_smarts.add(matchable_smarts)
-                fa_pos = PatternGenerator._fa_positions_from_r_count(
+                fa_pos = PatternGenerator.fa_positions_from_r_count(
                     template_smarts, lipid_type
                 )
                 safe_id = (f"excel_primary_{example_num}"
@@ -141,22 +140,10 @@ class PatternGenerator:
         return patterns
 
     @staticmethod
-    def _normalise_kekulised_smarts(smarts: str) -> str:
+    def normalise_kekulised_smarts(smarts: str) -> str:
         """
         Round-trip through SMILES to convert Kekulé ring notation (C=C-C=C) to
-        aromatic SMARTS (c:c) where RDKit perceives aromaticity (e.g. butenolide
-        in sterol lactones, chromanol in quinones). This is needed because the
-        Excel SMARTS are hand-written in Kekulé form, but HasSubstructMatch fails
-        against molecules whose rings RDKit marks as aromatic.
-
-        [#6] placeholders (substituted [R]) cannot parse as SMILES atoms;
-        they are swapped to [At] (astatine, rare element) before the round-trip
-        and restored afterwards.
-
-        [*] wildcards (backbone patterns from [R]→[*]) survive as-is:
-        MolFromSmiles treats [*] as atomic number 0, and MolToSmarts then
-        emits [#0] which never matches real atoms.  Skip normalisation for
-        these patterns — backbone SMARTS have no Kekulé ring issues anyway.
+        aromatic SMARTS (c:c) where RDKit perceives aromaticity.
         """
         if "[*]" in smarts:
             return smarts  # wildcard patterns don't need aromatic normalisation
@@ -168,15 +155,7 @@ class PatternGenerator:
         return canonical.replace("[At]", "[#6]")
 
     @staticmethod
-    def _normalise_sugar_smarts(sugar_smarts: str) -> str:
-        """
-        Sugar SMARTS from the Excel begin with [G]O[ring...].
-        The leading [G] is the aglycone placeholder and the following O is the
-        glycosidic oxygen.  Templates already supply that O (e.g. CO[G]), so
-        substituting the raw sugar creates an extra atom (CO[#6]O-ring instead
-        of CO-ring).  Strip the leading [G]O (or bare [G]) so substitution
-        produces the correct C-O-ring connectivity.
-        """
+    def normalise_sugar_smarts(sugar_smarts: str) -> str:
         s = sugar_smarts
         if s.startswith("[G]O"):
             s = s[4:]  # drop "[G]O" – the template's O serves as glycosidic O
@@ -193,7 +172,7 @@ class PatternGenerator:
             if "[G]" not in template_smarts:
                 continue
             for sugar_name, sugar_smarts in sugars.items():
-                clean_sugar = PatternGenerator._normalise_sugar_smarts(sugar_smarts)
+                clean_sugar = PatternGenerator.normalise_sugar_smarts(sugar_smarts)
                 complete_smarts = (
                     template_smarts
                     .replace("[G]", clean_sugar, 1)    # specific sugar at primary site
@@ -242,9 +221,7 @@ def build_combined_patterns(manual_patterns: Dict[str, HeadgroupPattern],
                         all_patterns[pattern_id] = pattern
                         generated_added += 1
 
-            # Backbone patterns: one per template with [G] and [R] → [*] (any atom).
-            # These are sugar-agnostic fallbacks so that molecules with a different
-            # sugar stereochemistry or sugar variant still match the lipid class.
+            # Backbone patterns: one per template with [G] and [R] → [*]
             backbone_added = 0
             for template_id, template_info in templates.items():
                 backbone_smarts = (
@@ -264,45 +241,43 @@ def build_combined_patterns(manual_patterns: Dict[str, HeadgroupPattern],
                     )
                     backbone_added += 1
 
-            # Backbone variants for primary patterns: replace [R] with [*] so that
-            # molecules with free hydroxyl groups (rather than ester/ether substituents)
-            # still match the sphingoid/glycerol backbone topology.
+            # Backbone variants for primary patterns: replace [R] with [*]
             primary_backbone_added = 0
             try:
                 import openpyxl as _openpyxl
-                _wb = _openpyxl.load_workbook(excel_path)
-                _ws = _wb["Hoja1"]
-                _seen = set()
-                for _row in _ws.iter_rows(min_row=2, values_only=True):
+                wb = _openpyxl.load_workbook(excel_path)
+                ws = wb["Hoja1"]
+                seen = set()
+                for _row in ws.iter_rows(min_row=2, values_only=True):
                     if not _row or len(_row) < 5 or not _row[3]:
                         continue
-                    _raw_smarts = str(_row[3]).strip()
-                    if "[G]" in _raw_smarts or not isinstance(_row[3], str):
+                    raw_smarts = str(_row[3]).strip()
+                    if "[G]" in raw_smarts or not isinstance(_row[3], str):
                         continue  # templates handled above; skip [G] rows
                     _ex = _row[0]
-                    _lipid_type = _row[4]
+                    lipid_type = _row[4]
                     _lipid_subtype = _row[5] if len(_row) > 5 else None
-                    _backbone_smarts = PatternGenerator._normalise_kekulised_smarts(
-                        _raw_smarts.replace("[R]", "[*]")
+                    _backbone_smarts = PatternGenerator.normalise_kekulised_smarts(
+                        raw_smarts.replace("[R]", "[*]")
                     )
-                    if _backbone_smarts in _seen:
+                    if _backbone_smarts in seen:
                         continue
-                    _seen.add(_backbone_smarts)
-                    _safe_id = (f"primary_backbone_{_ex}"
+                    seen.add(_backbone_smarts)
+                    safe_id = (f"primary_backbone_{_ex}"
                                 .replace(" ", "_").replace("(", "").replace(")", "")
                                 .replace("/", "_").replace("-", "_"))
-                    _base_id = _safe_id
-                    _c = 1
-                    while _safe_id in all_patterns:
-                        _safe_id = f"{_base_id}_{_c}"
-                        _c += 1
-                    _fa_pos = PatternGenerator._fa_positions_from_r_count(_raw_smarts, _lipid_type)
-                    _name = str(_lipid_subtype).strip() if _lipid_subtype else str(_ex)
-                    all_patterns[_safe_id] = HeadgroupPattern(
-                        name=f"{_name} (any chain)",
+                    base_id = safe_id
+                    carbon = 1
+                    while safe_id in all_patterns:
+                        safe_id = f"{base_id}_{carbon}"
+                        carbon += 1
+                    fa_pos = PatternGenerator.fa_positions_from_r_count(raw_smarts, lipid_type)
+                    name = str(_lipid_subtype).strip() if _lipid_subtype else str(_ex)
+                    all_patterns[safe_id] = HeadgroupPattern(
+                        name=f"{name} (any chain)",
                         smarts=_backbone_smarts,
-                        lipid_class=str(_lipid_type) if _lipid_type else "Unknown",
-                        fa_positions=_fa_pos,
+                        lipid_class=str(lipid_type) if lipid_type else "Unknown",
+                        fa_positions=fa_pos,
                         description=f"Backbone-only primary pattern (ex {_ex})"
                     )
                     primary_backbone_added += 1
@@ -310,12 +285,8 @@ def build_combined_patterns(manual_patterns: Dict[str, HeadgroupPattern],
                 print(f"Warning: primary backbone generation failed: {_e}", file=sys.stderr)
             backbone_added += primary_backbone_added
 
-            total_primary = len(manual_patterns) + primary_added
             print(
-                f"[OK] Total patterns: {total_primary + generated_added + backbone_added} "
-                f"({total_primary} primary [{len(manual_patterns)} manual + {primary_added} from Excel] "
-                f"+ {generated_added} generated [{len(templates)} templates x {len(sugars)} sugars]"
-                f"+ {backbone_added} backbone)",
+                f"[OK] Patterns Generated",
                 file=sys.stderr
             )
         except Exception as e:

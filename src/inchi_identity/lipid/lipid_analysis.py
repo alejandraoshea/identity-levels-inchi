@@ -81,7 +81,7 @@ class LipidHeadValidator:
                 for idx in ring:
                     ring_map.setdefault(idx, []).append(set(ring))
 
-            def _in_O_ring(idx: int) -> bool:
+            def in_O_ring(idx: int) -> bool:
                 return any(
                     any(mol.GetAtomWithIdx(i).GetSymbol() == 'O' for i in r)
                     for r in ring_map.get(idx, [])
@@ -93,12 +93,12 @@ class LipidHeadValidator:
             o_ring_ok = False
             if p_ring:
                 for match in mol.GetSubstructMatches(p_ring):
-                    if _in_O_ring(match[0]):
+                    if in_O_ring(match[0]):
                         o_ring_ok = True
                         break
             if not o_ring_ok and p_exo:
                 for match in mol.GetSubstructMatches(p_exo):
-                    if any(_in_O_ring(n.GetIdx())
+                    if any(in_O_ring(n.GetIdx())
                            for n in mol.GetAtomWithIdx(match[0]).GetNeighbors()):
                         o_ring_ok = True
                         break
@@ -121,6 +121,33 @@ class LipidHeadValidator:
     @staticmethod
     def get_inchi(mol: Chem.Mol) -> str:
         return rdInchi.MolToInchi(mol) or ''
+
+    @staticmethod
+    def classify_with_classyfire(inchi: str):
+        try:
+            import requests
+            inchikey = rdInchi.InchiToInchiKey(inchi)
+            if not inchikey:
+                return None
+            resp = requests.get(
+                f"https://classyfire.wishartlab.com/entities/{inchikey}.json",
+                timeout=5,
+                headers={"Accept": "application/json"},
+            )
+            if resp.status_code == 200:
+                superclass = (resp.json().get("superclass") or {}).get("name", "")
+                return "Lipids" in superclass
+            return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def is_lipid(inchi: str, mol) -> bool:
+        cf = LipidHeadValidator.classify_with_classyfire(inchi)
+        if cf is not None:
+            return cf
+        return LipidHeadValidator().matches_any_valid_head(mol)
+
 
     def matches_any_valid_head(
         self,
@@ -232,19 +259,6 @@ class LipidHeadValidator:
 class LipidAnalysis:
     MIN_TAIL_CARBONS = 2
 
-    HEAD_ANCHORS = {
-        "carboxyl":             Chem.MolFromSmarts("C(=O)[O;H,-]"),
-        "phosphate":            Chem.MolFromSmarts("P(=O)([O;H,-])[O;H,-]"),
-        "phosphorylcholine":    Chem.MolFromSmarts("OP(=O)([O-])OCC[N+](C)(C)C"),
-        "phosphorylethanolamine": Chem.MolFromSmarts("OP(=O)([O-])OCCN"),
-        "phosphorylserine":     Chem.MolFromSmarts("OP(=O)([O-])OC(N)C(=O)[O-]"),
-        "phosphorylinositol":   Chem.MolFromSmarts("OP(=O)([O-])OC1C(O)C(O)C(O)C(O)C1O"),
-        "sulfate":              Chem.MolFromSmarts("OS(=O)(=O)[O;H,-]"),
-        "choline":              Chem.MolFromSmarts("OCC[N+](C)(C)C"),
-        "ethanolamine":         Chem.MolFromSmarts("OCCN"),
-        "serine":               Chem.MolFromSmarts("OC(N)C(=O)[O-]"),
-    }
-
     @staticmethod
     def parse_smiles(smiles: str) -> Chem.Mol:
         #Parse a SMILES string into an RDKit molecule.
@@ -253,35 +267,6 @@ class LipidAnalysis:
         if "[G]" in smiles or "[R]" in smiles:
             return None
         return Chem.MolFromSmiles(smiles.strip())
-    
-    @staticmethod
-    def is_lipid_rdkit(mol):
-        if mol is None:
-            return False
-        has_chain = LipidAnalysis.has_long_carbon_chain(mol, min_len=8)
-        head_atoms = TailExtractor.detect_head_atoms(mol)
-        ester, amide, ether = LipidAnalysis.count_lipid_linkages(mol)
-        if len(head_atoms) > 0:
-            tails = TailExtractor.extract_tails(mol)
-            if len(tails) >= 1:
-                return True
-        if has_chain and mol.HasSubstructMatch(LipidAnalysis.HEAD_ANCHORS["carboxyl"]):
-            return True
-        if has_chain and amide >= 1:
-            return True
-        if has_chain and (ester >= 2 or ether >= 2):
-            return True
-        if mol.GetRingInfo().NumRings() >= 4 and has_chain:
-            return True
-        return False
-
-    @staticmethod
-    def is_lipid(inchi: str, mol=None) -> bool:
-        if mol is None:
-            mol = Chem.MolFromInchi(inchi)
-            if mol is None:
-                return False
-        return LipidAnalysis.is_lipid_rdkit(mol)
 
     @staticmethod
     def has_long_carbon_chain(mol, min_len=8):
@@ -304,23 +289,6 @@ class LipidAnalysis:
                 for nbr in a.GetNeighbors():
                     stack.append((nbr.GetIdx(), length))
         return False
-
-    @staticmethod
-    def count_lipid_linkages(mol):
-        ester = amide = ether = 0
-        for bond in mol.GetBonds():
-            a1, a2 = bond.GetBeginAtom(), bond.GetEndAtom()
-            if bond.GetBondType() == Chem.BondType.DOUBLE:
-                if {a1.GetSymbol(), a2.GetSymbol()} == {"C", "O"}:
-                    ester += 1
-            if a1.GetSymbol() == "C" and a2.GetSymbol() == "N":
-                amide += 1
-            elif a2.GetSymbol() == "C" and a1.GetSymbol() == "N":
-                amide += 1
-            if bond.GetBondType() == Chem.BondType.SINGLE:
-                if {a1.GetSymbol(), a2.GetSymbol()} == {"C", "O"}:
-                    ether += 1
-        return ester, amide, ether
 
     @staticmethod
     def tail_sig_levelB(t):

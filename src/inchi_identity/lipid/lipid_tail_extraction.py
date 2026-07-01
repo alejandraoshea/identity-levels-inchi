@@ -1,4 +1,3 @@
-import requests
 from functools import lru_cache
 from rdkit import Chem
 from rdkit.Chem import MolToSmiles
@@ -76,7 +75,7 @@ class TailExtractor:
                             oxygens += 1
                             o_positions.append(position)
 
-            if carbons >= 6:  # filter small fragments
+            if carbons >= 2:
                 return {
                     "C": carbons,
                     "DB": double_bonds,
@@ -114,61 +113,4 @@ class TailExtractor:
                 unique.append(t)
 
         return unique
-    
-    
-    @staticmethod
-    def walk_chain(start_atom, coming_from):
-            stack = [(start_atom, None)]
-            visited = set()
-
-            carbons = 0
-            double_bonds = 0
-            oxygens = 0
-
-            db_positions = []
-            o_positions = []
-
-            position = 0  # relative position along chain
-
-            while stack:
-                atom, prev = stack.pop()
-                idx = atom.GetIdx()
-
-                if idx in visited:
-                    continue
-                visited.add(idx)
-
-                if atom.GetSymbol() == "C":
-                    carbons += 1
-                    position += 1
-                elif atom.GetSymbol() == "O":
-                    oxygens += 1
-                    o_positions.append(position)
-
-                for bond in atom.GetBonds():
-                    nbr = bond.GetOtherAtom(atom)
-
-                    if prev is not None and nbr.GetIdx() == prev:
-                        continue
-
-                    # detect C=C double bonds
-                    if (
-                        bond.GetBondType() == Chem.rdchem.BondType.DOUBLE
-                        and atom.GetSymbol() == "C"
-                        and nbr.GetSymbol() == "C"
-                    ):
-                        double_bonds += 1
-                        db_positions.append(position)
-
-                    if nbr.GetSymbol() in ["C", "O"]:
-                        stack.append((nbr, atom.GetIdx()))
-
-            return {
-                "C": carbons,
-                "DB": double_bonds,
-                "O": oxygens,
-                "DB_positions": tuple(sorted(db_positions)),
-                "O_positions": tuple(sorted(o_positions)),
-                "atoms": tuple(sorted(visited)),
-            }
     

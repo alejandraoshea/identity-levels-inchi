@@ -331,13 +331,12 @@ class InChI:
             return {"A": True, "B": True, "C": True, "D": True}
 
         # Levels B/C/D only apply to lipids
-        if not (LipidAnalysis.is_lipid(inchi1, mol1) and
-                LipidAnalysis.is_lipid(inchi2, mol2)):
+        if not (LipidHeadValidator.is_lipid(inchi1, mol1) and LipidHeadValidator.is_lipid(inchi2, mol2)):
             return {"A": False, "B": None, "C": None, "D": None}
 
-        _validator = LipidHeadValidator()
-        head_class1 = _validator.identify_lipid_class(mol1_a)
-        head_class2 = _validator.identify_lipid_class(mol2_a)
+        validator = LipidHeadValidator()
+        head_class1 = validator.identify_lipid_class(mol1_a)
+        head_class2 = validator.identify_lipid_class(mol2_a)
         if head_class1 and head_class2 and not set(head_class1) & set(head_class2):
             return {"A": False, "B": False, "C": False, "D": False}
 
@@ -393,8 +392,7 @@ class InChI:
         mol2 = InChI.neutralize_molecule(mol2)
 
         # STEP 4: lipid check
-        if not (LipidAnalysis.is_lipid(inchi1, mol1) and
-                LipidAnalysis.is_lipid(inchi2, mol2)):
+        if not (LipidHeadValidator.is_lipid(inchi1, mol1) and LipidHeadValidator.is_lipid(inchi2, mol2)):
 
             # fallback: simple structural comparison
             sig1 = Chem.MolToSmiles(mol1, canonical=True, isomericSmiles=False)
@@ -540,8 +538,8 @@ class InChI:
         mol2 = tautomer_enumerator.Canonicalize(mol2)
 
         # STEP 6: lipid detection
-        is_lipid1 = LipidAnalysis.is_lipid(inchi1, mol1)
-        is_lipid2 = LipidAnalysis.is_lipid(inchi2, mol2)
+        is_lipid1 = LipidHeadValidator.is_lipid(inchi1, mol1)
+        is_lipid2 = LipidHeadValidator.is_lipid(inchi2, mol2)
 
         if is_lipid1 != is_lipid2:
             return False
